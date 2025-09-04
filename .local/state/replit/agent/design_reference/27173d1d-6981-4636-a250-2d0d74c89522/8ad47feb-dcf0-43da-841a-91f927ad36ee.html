@@ -1,0 +1,627 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Automation Dashboard - LAS File Processing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)",
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    popover: {
+                        DEFAULT: "var(--popover)",
+                        foreground: "var(--popover-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    destructive: {
+                        DEFAULT: "var(--destructive)",
+                        foreground: "var(--destructive-foreground)",
+                    },
+                    border: "var(--border)",
+                    input: "var(--input)",
+                    ring: "var(--ring)",
+                    success: "var(--success)",
+                    warning: "var(--warning)",
+                }
+            },
+            fontFamily: {
+                sans: ["Inter", "system-ui", "sans-serif"],
+            }
+        }
+    };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --background: hsl(222 15% 6%);
+            --foreground: hsl(210 40% 98%);
+            --card: hsl(222 15% 9%);
+            --card-foreground: hsl(210 40% 98%);
+            --popover: hsl(222 15% 9%);
+            --popover-foreground: hsl(210 40% 98%);
+            --primary: hsl(217 91% 60%);
+            --primary-foreground: hsl(210 40% 98%);
+            --secondary: hsl(217 19% 15%);
+            --secondary-foreground: hsl(210 40% 98%);
+            --muted: hsl(217 19% 13%);
+            --muted-foreground: hsl(215 20% 65%);
+            --accent: hsl(217 19% 15%);
+            --accent-foreground: hsl(210 40% 98%);
+            --destructive: hsl(0 84% 60%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(217 19% 15%);
+            --input: hsl(217 19% 15%);
+            --ring: hsl(217 91% 60%);
+            --success: hsl(142 71% 45%);
+            --warning: hsl(38 92% 50%);
+            --radius: 0.5rem;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background-color: var(--success);
+            box-shadow: 0 0 0 3px hsla(142, 71%, 45%, 0.2);
+        }
+        
+        .status-warning {
+            background-color: var(--warning);
+            box-shadow: 0 0 0 3px hsla(38, 92%, 50%, 0.2);
+        }
+        
+        .status-offline {
+            background-color: var(--destructive);
+            box-shadow: 0 0 0 3px hsla(0, 84%, 60%, 0.2);
+        }
+        
+        .log-entry {
+            transition: background-color 0.2s ease;
+        }
+        
+        .log-entry:hover {
+            background-color: hsl(217 19% 11%);
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, var(--card) 0%, hsl(217 19% 11%) 100%);
+            border: 1px solid var(--border);
+        }
+        
+        .sidebar {
+            background: linear-gradient(180deg, var(--card) 0%, hsl(217 19% 7%) 100%);
+        }
+    </style>
+</head>
+<body class="bg-background text-foreground font-sans antialiased min-h-screen">
+    <!-- @COMPONENT: MainLayout -->
+    <div class="flex h-screen overflow-hidden">
+        <!-- @COMPONENT: Sidebar -->
+        <div class="sidebar w-64 p-6 border-r border-border flex flex-col">
+            <div class="flex items-center space-x-3 mb-8">
+                <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                    <i class="fas fa-envelope text-primary-foreground text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-semibold">Email Automation</h1>
+                    <p class="text-xs text-muted-foreground">LAS Processing System</p>
+                </div>
+            </div>
+            
+            <nav class="space-y-2 flex-1">
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-md bg-accent text-accent-foreground font-medium">
+                    <i class="fas fa-tachometer-alt w-4"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                    <i class="fas fa-envelope-open w-4"></i>
+                    <span>Email Monitor</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                    <i class="fas fa-robot w-4"></i>
+                    <span>LLM Integration</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                    <i class="fas fa-server w-4"></i>
+                    <span>MCP Server</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                    <i class="fas fa-file-code w-4"></i>
+                    <span>LAS Files</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                    <i class="fas fa-history w-4"></i>
+                    <span>Processing Logs</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                    <i class="fas fa-cog w-4"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            
+            <div class="mt-auto pt-4 border-t border-border">
+                <div class="flex items-center space-x-3 text-sm">
+                    <div class="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-muted-foreground"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium" data-bind="user.email">dhanushahane01@gmail.com</p>
+                        <p class="text-muted-foreground">System Admin</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: Sidebar -->
+
+        <!-- @COMPONENT: MainContent -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- @COMPONENT: Header -->
+            <header class="bg-card border-b border-border px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold">System Dashboard</h2>
+                        <p class="text-muted-foreground">Monitor and manage your email automation workflow</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button class="bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium hover:bg-primary/90 transition-colors" data-event="click:handleManualTrigger">
+                            <i class="fas fa-play mr-2"></i>
+                            Manual Trigger
+                        </button>
+                        <button class="bg-secondary text-secondary-foreground px-4 py-2 rounded-md font-medium hover:bg-secondary/90 transition-colors">
+                            <i class="fas fa-sync-alt mr-2"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <!-- @END_COMPONENT: Header -->
+
+            <!-- @COMPONENT: DashboardContent -->
+            <main class="flex-1 overflow-auto p-6 space-y-6">
+                <!-- System Status Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- @MAP: statusCards.map(card => ( -->
+                    <div class="metric-card rounded-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-envelope text-primary"></i>
+                            </div>
+                            <span class="status-indicator status-online"></span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-1" data-bind="emailMonitor.status">Active</h3>
+                        <p class="text-sm text-muted-foreground">Email Monitor</p>
+                        <p class="text-xs text-success mt-2">
+                            <i class="fas fa-arrow-up mr-1"></i>
+                            Last check: <span data-bind="emailMonitor.lastCheck">2 minutes ago</span>
+                        </p>
+                    </div>
+
+                    <div class="metric-card rounded-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-robot text-success"></i>
+                            </div>
+                            <span class="status-indicator status-online"></span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-1" data-bind="llm.status">Connected</h3>
+                        <p class="text-sm text-muted-foreground">Ollama LLM</p>
+                        <p class="text-xs text-success mt-2">
+                            <i class="fas fa-check mr-1"></i>
+                            Model: <span data-bind="llm.model">llama3.2:1b</span>
+                        </p>
+                    </div>
+
+                    <div class="metric-card rounded-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-server text-warning"></i>
+                            </div>
+                            <span class="status-indicator status-warning"></span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-1" data-bind="mcp.status">Initializing</h3>
+                        <p class="text-sm text-muted-foreground">MCP Server</p>
+                        <p class="text-xs text-warning mt-2">
+                            <i class="fas fa-clock mr-1"></i>
+                            Starting resources...
+                        </p>
+                    </div>
+
+                    <div class="metric-card rounded-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-chart-line text-success"></i>
+                            </div>
+                            <span class="status-indicator status-online"></span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-1" data-bind="processing.completedToday">12</h3>
+                        <p class="text-sm text-muted-foreground">Processed Today</p>
+                        <p class="text-xs text-success mt-2">
+                            <i class="fas fa-arrow-up mr-1"></i>
+                            +4 from yesterday
+                        </p>
+                    </div>
+                    <!-- @END_MAP )) -->
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Recent Activity -->
+                    <div class="bg-card rounded-lg border border-border">
+                        <div class="p-6 border-b border-border">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-semibold">Recent Activity</h3>
+                                <button class="text-muted-foreground hover:text-foreground">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div class="space-y-4">
+                                <!-- @MAP: recentActivity.map(activity => ( -->
+                                <div class="log-entry flex items-start space-x-3 p-3 rounded-md">
+                                    <div class="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-check text-success text-xs"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium" data-bind="activity.message">Email processed successfully from dhananjayshahane24@gmail.com</p>
+                                        <p class="text-xs text-muted-foreground mt-1">
+                                            Generated: well_log_analysis_20241216_143022.png
+                                        </p>
+                                        <p class="text-xs text-muted-foreground" data-bind="activity.timestamp">2 minutes ago</p>
+                                    </div>
+                                </div>
+
+                                <div class="log-entry flex items-start space-x-3 p-3 rounded-md">
+                                    <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-envelope text-primary text-xs"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium">New email received</p>
+                                        <p class="text-xs text-muted-foreground mt-1">
+                                            LLM analyzing: "Please analyze LAS file sample_well_01.las with depth visualization"
+                                        </p>
+                                        <p class="text-xs text-muted-foreground">5 minutes ago</p>
+                                    </div>
+                                </div>
+
+                                <div class="log-entry flex items-start space-x-3 p-3 rounded-md">
+                                    <div class="w-8 h-8 bg-warning/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-exclamation-triangle text-warning text-xs"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium">MCP resource warning</p>
+                                        <p class="text-xs text-muted-foreground mt-1">
+                                            LAS file not found: missing_file.las - requested manual upload
+                                        </p>
+                                        <p class="text-xs text-muted-foreground">12 minutes ago</p>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email Configuration -->
+                    <div class="bg-card rounded-lg border border-border">
+                        <div class="p-6 border-b border-border">
+                            <h3 class="text-lg font-semibold">Email Configuration</h3>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">IMAP Server Status</label>
+                                <div class="flex items-center space-x-2">
+                                    <span class="status-indicator status-online"></span>
+                                    <span class="text-sm" data-bind="email.imapServer">imap.gmail.com:993</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">SMTP Server Status</label>
+                                <div class="flex items-center space-x-2">
+                                    <span class="status-indicator status-online"></span>
+                                    <span class="text-sm" data-bind="email.smtpServer">smtp.gmail.com:587</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Filter Email</label>
+                                <div class="bg-muted rounded-md px-3 py-2">
+                                    <span class="text-sm font-mono" data-bind="email.filterEmail">dhananjayshahane24@gmail.com</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Monitoring Frequency</label>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm">Every</span>
+                                    <select class="bg-input border border-border rounded-md px-2 py-1 text-sm">
+                                        <option>30 seconds</option>
+                                        <option selected>1 minute</option>
+                                        <option>5 minutes</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button class="w-full bg-secondary text-secondary-foreground py-2 rounded-md font-medium hover:bg-secondary/90 transition-colors">
+                                <i class="fas fa-edit mr-2"></i>
+                                Edit Configuration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LLM & MCP Integration -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- LLM Integration Panel -->
+                    <div class="bg-card rounded-lg border border-border">
+                        <div class="p-6 border-b border-border">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-semibold">LLM Integration</h3>
+                                <span class="px-2 py-1 bg-success/10 text-success text-xs rounded-full">Connected</span>
+                            </div>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Ollama Endpoint</label>
+                                <div class="bg-muted rounded-md px-3 py-2">
+                                    <span class="text-sm font-mono" data-bind="llm.endpoint">https://88c46355da8c.ngrok-free.app/</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Model</label>
+                                <div class="bg-muted rounded-md px-3 py-2">
+                                    <span class="text-sm font-mono" data-bind="llm.currentModel">llama3.2:1b</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Response Time</label>
+                                <div class="text-sm text-muted-foreground">
+                                    Last query: <span data-bind="llm.lastResponseTime">1.2s</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Success Rate</label>
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex-1 bg-muted rounded-full h-2">
+                                        <div class="bg-success h-2 rounded-full" style="width: 94%"></div>
+                                    </div>
+                                    <span class="text-sm text-success">94%</span>
+                                </div>
+                            </div>
+
+                            <button class="w-full bg-primary text-primary-foreground py-2 rounded-md font-medium hover:bg-primary/90 transition-colors">
+                                <i class="fas fa-vial mr-2"></i>
+                                Test Connection
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- MCP Server Panel -->
+                    <div class="bg-card rounded-lg border border-border">
+                        <div class="p-6 border-b border-border">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-semibold">MCP Server</h3>
+                                <span class="px-2 py-1 bg-warning/10 text-warning text-xs rounded-full">Initializing</span>
+                            </div>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Available Resources</label>
+                                <div class="space-y-1">
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span>LAS Files</span>
+                                        <span class="text-success" data-bind="mcp.lasFiles">23 available</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span>Processing Scripts</span>
+                                        <span class="text-success" data-bind="mcp.scripts">8 available</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Active Tools</label>
+                                <div class="flex flex-wrap gap-1">
+                                    <!-- @MAP: mcpTools.map(tool => ( -->
+                                    <span class="px-2 py-1 bg-accent text-accent-foreground text-xs rounded" data-bind="tool.name">depth_plotter</span>
+                                    <span class="px-2 py-1 bg-accent text-accent-foreground text-xs rounded">gamma_analyzer</span>
+                                    <span class="px-2 py-1 bg-accent text-accent-foreground text-xs rounded">resistivity_tool</span>
+                                    <!-- @END_MAP )) -->
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Output Directory</label>
+                                <div class="bg-muted rounded-md px-3 py-2">
+                                    <span class="text-sm font-mono" data-bind="mcp.outputDir">./output/</span>
+                                </div>
+                            </div>
+
+                            <button class="w-full bg-secondary text-secondary-foreground py-2 rounded-md font-medium hover:bg-secondary/90 transition-colors">
+                                <i class="fas fa-sync mr-2"></i>
+                                Refresh Resources
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Processing Queue and Logs -->
+                <div class="bg-card rounded-lg border border-border">
+                    <div class="p-6 border-b border-border">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold">Processing Queue & Logs</h3>
+                            <div class="flex items-center space-x-2">
+                                <button class="text-muted-foreground hover:text-foreground">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="text-muted-foreground hover:text-foreground">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <!-- @MAP: processingQueue.map(item => ( -->
+                            <div class="border border-border rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-file-code text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium" data-bind="item.filename">well_analysis_20241216_143045.las</p>
+                                            <p class="text-sm text-muted-foreground">Requested by: <span data-bind="item.requester">dhananjayshahane24@gmail.com</span></p>
+                                        </div>
+                                    </div>
+                                    <span class="px-2 py-1 bg-success/10 text-success text-xs rounded-full" data-bind="item.status">Completed</span>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                    <div>
+                                        <label class="text-muted-foreground">Script Used</label>
+                                        <p data-bind="item.script">depth_visualization.py</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-muted-foreground">Processing Time</label>
+                                        <p data-bind="item.processingTime">2.3s</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-muted-foreground">Output</label>
+                                        <p class="text-primary cursor-pointer hover:underline" data-bind="item.outputFile">well_analysis_output.png</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3 pt-3 border-t border-border">
+                                    <details class="text-sm">
+                                        <summary class="text-muted-foreground cursor-pointer hover:text-foreground">View Processing Log</summary>
+                                        <div class="mt-2 bg-muted rounded-md p-3 font-mono text-xs">
+                                            <div class="space-y-1" data-mock="true">
+                                                <div>[2024-12-16 14:30:45] Starting LAS file analysis...</div>
+                                                <div>[2024-12-16 14:30:46] Loading file: well_analysis_20241216_143045.las</div>
+                                                <div>[2024-12-16 14:30:46] Executing script: depth_visualization.py</div>
+                                                <div>[2024-12-16 14:30:47] Generating depth plot...</div>
+                                                <div>[2024-12-16 14:30:48] Output saved: ./output/20241216_143048/well_analysis_output.png</div>
+                                                <div class="text-success">[2024-12-16 14:30:48] Processing completed successfully</div>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                            </div>
+
+                            <div class="border border-border rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-clock text-warning"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium">gamma_analysis_sample.las</p>
+                                            <p class="text-sm text-muted-foreground">Requested by: dhananjayshahane24@gmail.com</p>
+                                        </div>
+                                    </div>
+                                    <span class="px-2 py-1 bg-warning/10 text-warning text-xs rounded-full">Processing</span>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                    <div>
+                                        <label class="text-muted-foreground">Script Used</label>
+                                        <p>gamma_ray_analyzer.py</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-muted-foreground">Progress</label>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="flex-1 bg-muted rounded-full h-2">
+                                                <div class="bg-warning h-2 rounded-full transition-all duration-300" style="width: 75%"></div>
+                                            </div>
+                                            <span class="text-xs">75%</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="text-muted-foreground">ETA</label>
+                                        <p>~30 seconds</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+            <!-- @END_COMPONENT: DashboardContent -->
+        </div>
+        <!-- @END_COMPONENT: MainContent -->
+    </div>
+    <!-- @END_COMPONENT: MainLayout -->
+
+    <script>
+        (function() {
+            // TODO: Implement real-time status updates
+            // TODO: Add WebSocket connection for live monitoring
+            // TODO: Implement email configuration management
+            // TODO: Add MCP server health checks
+            // TODO: Implement manual trigger functionality
+            
+            // Simulated real-time updates
+            function updateDashboard() {
+                // Mock real-time status updates
+                console.log('Dashboard updated');
+            }
+            
+            // Simulated status polling
+            setInterval(updateDashboard, 30000);
+            
+            // Manual trigger button handler
+            document.querySelector('[data-event*="handleManualTrigger"]').addEventListener('click', function() {
+                console.log('Manual trigger initiated');
+                // TODO: Implement manual email processing trigger
+            });
+            
+            // Progress bar animation for processing items
+            const progressBars = document.querySelectorAll('.bg-warning');
+            progressBars.forEach(bar => {
+                if (bar.style.width) {
+                    bar.style.transition = 'width 0.3s ease-in-out';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
