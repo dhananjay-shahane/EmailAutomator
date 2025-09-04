@@ -181,8 +181,11 @@ export class EmailService {
     };
 
     if (attachmentPath) {
+      const filename = attachmentPath.split('/').pop() || 'analysis_result.png';
       mailOptions.attachments = [{
+        filename: filename,
         path: attachmentPath,
+        contentType: 'image/png'
       }];
     }
 

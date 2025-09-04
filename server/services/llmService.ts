@@ -22,12 +22,21 @@ export class LLMService {
 
 Email content: "${emailBody}"
 
+IMPORTANT: You can ONLY use these available LAS files:
+- sample_well_01.las (for basic well data, depth analysis)
+- production_well_02.las (for production data, gamma ray analysis)
+
 You must respond with a JSON object containing:
-- script: The Python script name to use (e.g., "depth_visualization.py", "gamma_ray_analyzer.py", "resistivity_tool.py")
-- lasFile: The LAS file name mentioned or inferred from the request
-- tool: The specific MCP tool to use (e.g., "depth_plotter", "gamma_analyzer", "resistivity_tool")
+- script: Choose from "depth_visualization.py", "gamma_ray_analyzer.py", or "resistivity_tool.py"
+- lasFile: Choose ONLY "sample_well_01.las" or "production_well_02.las" 
+- tool: Choose from "depth_plotter", "gamma_analyzer", or "resistivity_tool"
 - confidence: A number between 0-1 indicating confidence in the analysis
 - reasoning: A brief explanation of why these choices were made
+
+For requests about:
+- "plot", "depth", "visualization" → use sample_well_01.las with depth_visualization.py
+- "gamma", "gamma_analyzer" → use production_well_02.las with gamma_ray_analyzer.py
+- "resistivity" → use sample_well_01.las with resistivity_tool.py
 
 Example response:
 {
@@ -35,7 +44,7 @@ Example response:
   "lasFile": "sample_well_01.las",
   "tool": "depth_plotter",
   "confidence": 0.95,
-  "reasoning": "Request specifically asks for depth analysis of sample_well_01.las file"
+  "reasoning": "Request asks for plot/visualization, using sample well data"
 }
 
 Respond only with valid JSON:`;
