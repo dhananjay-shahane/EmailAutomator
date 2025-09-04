@@ -164,6 +164,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Demo data endpoint for showcasing functionality
+  app.post("/api/create-demo-data", async (req, res) => {
+    try {
+      // Create sample email logs for demonstration
+      const sampleLogs = [
+        {
+          sender: "geologist@oilcompany.com",
+          subject: "Analyze well data for sample_well_01.las",
+          body: "Please analyze the gamma ray and resistivity data for sample_well_01.las file and generate depth visualization charts.",
+          status: "completed",
+          llmResponse: {
+            script: "depth_visualization.py",
+            lasFile: "sample_well_01.las",
+            tool: "depth_plotter",
+            confidence: 0.95,
+            reasoning: "Request specifically asks for depth analysis of sample_well_01.las file"
+          },
+          mcpScript: "depth_visualization.py",
+          lasFile: "sample_well_01.las",
+          outputFile: "./output/sample_well_01_depth_visualization.png",
+          errorMessage: null,
+          processingTime: 2500,
+          completedAt: new Date(),
+        },
+        {
+          sender: "petro.engineer@upstream.com",
+          subject: "Gamma ray analysis needed",
+          body: "I need statistical analysis of gamma ray data from production_well_02.las. Please generate histogram and moving average charts.",
+          status: "completed",
+          llmResponse: {
+            script: "gamma_ray_analyzer.py",
+            lasFile: "production_well_02.las",
+            tool: "gamma_analyzer",
+            confidence: 0.88,
+            reasoning: "Clear request for gamma ray statistical analysis"
+          },
+          mcpScript: "gamma_ray_analyzer.py",
+          lasFile: "production_well_02.las",
+          outputFile: "./output/production_well_02_gamma_analysis.png",
+          errorMessage: null,
+          processingTime: 3200,
+          completedAt: new Date(),
+        },
+        {
+          sender: "drilling@exploration.net",
+          subject: "Process drilling logs",
+          body: "Please process the latest drilling logs and provide formation evaluation.",
+          status: "processing",
+          llmResponse: {
+            script: "formation_evaluator.py",
+            lasFile: "drilling_logs.las",
+            tool: "formation_evaluator",
+            confidence: 0.75,
+            reasoning: "Formation evaluation requested for drilling logs"
+          },
+          mcpScript: "formation_evaluator.py",
+          lasFile: "drilling_logs.las",
+          outputFile: null,
+          errorMessage: null,
+          processingTime: null,
+          completedAt: null,
+        }
+      ];
+
+      const createdLogs = [];
+      for (const logData of sampleLogs) {
+        const log = await storage.createEmailLog(logData);
+        createdLogs.push(log);
+        broadcast({ type: 'new_email', emailLog: log });
+      }
+
+      res.json({ 
+        message: "Demo data created successfully", 
+        logsCreated: createdLogs.length,
+        logs: createdLogs 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create demo data" });
+    }
+  });
+
   // Email processing function
   const processEmails = async () => {
     try {

@@ -74,14 +74,26 @@ export class EmailService {
   }
 
   async checkForNewEmails(): Promise<ParsedEmail[]> {
+    // If no credentials are configured, return empty array instead of failing
+    if (!this.config.username || !this.config.password) {
+      console.log('Email credentials not configured, returning empty emails array');
+      return [];
+    }
+
     if (!this.imapConnection) {
-      await this.connectImap();
+      try {
+        await this.connectImap();
+      } catch (error) {
+        console.log('IMAP connection failed, returning empty emails array');
+        return [];
+      }
     }
 
     return new Promise((resolve, reject) => {
       this.imapConnection.openBox('INBOX', false, (err: Error) => {
         if (err) {
-          reject(err);
+          console.log('IMAP openBox failed, returning empty emails array');
+          resolve([]);
           return;
         }
 
@@ -184,12 +196,18 @@ export class EmailService {
   }
 
   async testConnection(): Promise<boolean> {
+    // If no credentials are configured, return false but don't throw errors
+    if (!this.config.username || !this.config.password) {
+      console.log('Email credentials not configured');
+      return false;
+    }
+
     try {
       await this.smtpTransporter.verify();
       await this.connectImap();
       return true;
     } catch (error) {
-      console.error('Email connection test failed:', error);
+      console.log('Email connection test failed:', error);
       return false;
     }
   }

@@ -105,7 +105,7 @@ Respond only with valid JSON:`;
         prompt: 'Test connection. Respond with: OK',
         stream: false,
       }, {
-        timeout: 10000,
+        timeout: 5000,
       });
 
       const responseTime = Date.now() - startTime;
@@ -115,9 +115,11 @@ Respond only with valid JSON:`;
         responseTime: responseTime / 1000, // Convert to seconds
       };
     } catch (error) {
+      const responseTime = Date.now() - startTime;
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        responseTime: responseTime / 1000,
+        error: error instanceof Error ? error.message : 'LLM service unavailable',
       };
     }
   }
