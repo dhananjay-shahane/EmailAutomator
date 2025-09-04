@@ -22,21 +22,30 @@ export class LLMService {
 
 Email content: "${emailBody}"
 
-IMPORTANT: You can ONLY use these available LAS files:
-- sample_well_01.las (for basic well data, depth analysis)
-- production_well_02.las (for production data, gamma ray analysis)
+IMPORTANT: You can ONLY use these EXACT available resources:
+
+SCRIPTS (choose exactly one):
+- "depth_visualization.py" → for depth plots, visualizations, general plotting
+- "gamma_ray_analyzer.py" → for gamma ray analysis, statistical analysis
+
+LAS FILES (choose exactly one):
+- "sample_well_01.las" → for basic well data, depth analysis
+- "production_well_02.las" → for production data, gamma ray analysis
+
+TOOLS (must match script):
+- "depth_plotter" → use with depth_visualization.py
+- "gamma_analyzer" → use with gamma_ray_analyzer.py
 
 You must respond with a JSON object containing:
-- script: Choose from "depth_visualization.py", "gamma_ray_analyzer.py", or "resistivity_tool.py"
-- lasFile: Choose ONLY "sample_well_01.las" or "production_well_02.las" 
-- tool: Choose from "depth_plotter", "gamma_analyzer", or "resistivity_tool"
+- script: Choose exactly "depth_visualization.py" OR "gamma_ray_analyzer.py"
+- lasFile: Choose exactly "sample_well_01.las" OR "production_well_02.las" 
+- tool: Choose exactly "depth_plotter" OR "gamma_analyzer"
 - confidence: A number between 0-1 indicating confidence in the analysis
 - reasoning: A brief explanation of why these choices were made
 
-For requests about:
-- "plot", "depth", "visualization" → use sample_well_01.las with depth_visualization.py
-- "gamma", "gamma_analyzer" → use production_well_02.las with gamma_ray_analyzer.py
-- "resistivity" → use sample_well_01.las with resistivity_tool.py
+Natural language mapping rules:
+- "plot", "depth", "visualization", "chart" → depth_visualization.py + depth_plotter + sample_well_01.las
+- "gamma", "analysis", "statistical", "analyzer" → gamma_ray_analyzer.py + gamma_analyzer + production_well_02.las
 
 Example response:
 {
@@ -81,27 +90,11 @@ Respond only with valid JSON:`;
         };
       } catch (parseError) {
         console.error('Failed to parse LLM response as JSON:', responseText);
-        
-        // Fallback response using available LAS files
-        return {
-          script: 'depth_visualization.py',
-          lasFile: 'sample_well_01.las',
-          tool: 'depth_plotter',
-          confidence: 0.1,
-          reasoning: 'Failed to parse LLM response, using available LAS file',
-        };
+        throw new Error(`LLM returned invalid response: ${responseText.substring(0, 100)}...`);
       }
     } catch (error) {
       console.error('LLM service error:', error);
-      
-      // Fallback response for network/API errors using available LAS files
-      return {
-        script: 'depth_visualization.py',
-        lasFile: 'production_well_02.las',
-        tool: 'depth_plotter',
-        confidence: 0.0,
-        reasoning: 'LLM service unavailable, using available LAS file',
-      };
+      throw new Error(`LLM service unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
