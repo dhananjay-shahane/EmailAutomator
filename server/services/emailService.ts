@@ -8,7 +8,7 @@ export interface EmailConfig {
   smtpPort: number;
   username: string;
   password: string;
-  filterEmail: string;
+  filterEmails: string[];
 }
 
 export interface ParsedEmail {
@@ -30,7 +30,7 @@ export class EmailService {
       smtpPort: parseInt(process.env.MAIL_PORT || '587'),
       username: process.env.SMTP_USER || process.env.EMAIL_USER || '',
       password: process.env.SMTP_PASSWORD || process.env.EMAIL_PASSWORD || '',
-      filterEmail: process.env.FILTER_EMAIL || '',
+      filterEmails: (process.env.FILTER_EMAILS || process.env.FILTER_EMAIL || '').split(',').map(email => email.trim()).filter(email => email),
     };
 
     this.initializeSmtp();
@@ -97,10 +97,16 @@ export class EmailService {
           return;
         }
 
-        // Search for unread emails from filter email
+        // Search for unread emails from filter emails
         let searchCriteria: any = ['UNSEEN'];
-        if (this.config.filterEmail) {
-          searchCriteria = [searchCriteria, ['FROM', this.config.filterEmail]];
+        if (this.config.filterEmails.length > 0) {
+          // Create OR criteria for multiple email addresses
+          const fromCriteria = this.config.filterEmails.map(email => ['FROM', email]);
+          if (fromCriteria.length === 1) {
+            searchCriteria = [searchCriteria, fromCriteria[0]];
+          } else {
+            searchCriteria = [searchCriteria, ['OR', ...fromCriteria]];
+          }
         }
 
         this.imapConnection.search(searchCriteria, (err: Error, results: number[]) => {

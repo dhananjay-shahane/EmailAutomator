@@ -32,7 +32,7 @@ export class MemStorage implements IStorage {
     const defaultStatuses = [
       { component: 'email_monitor', status: 'online' as const, metadata: { lastCheck: new Date().toISOString() } },
       { component: 'llm', status: 'online' as const, metadata: { model: 'llama3.2:1b', endpoint: 'https://88c46355da8c.ngrok-free.app/' } },
-      { component: 'mcp_server', status: 'warning' as const, metadata: { initializing: true } },
+      { component: 'mcp_server', status: 'online' as const, metadata: { initialized: true } },
     ];
     
     defaultStatuses.forEach(status => {

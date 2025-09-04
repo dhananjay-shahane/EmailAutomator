@@ -1,0 +1,48 @@
+LAS FILE PROCESSING AUTOMATION SYSTEM - SETUP GUIDE
+=======================================================
+
+OVERVIEW:
+This system automatically processes LAS (Log ASCII Standard) files through email workflows.
+It monitors emails, uses AI to understand processing requests, executes Python scripts,
+and returns visualizations to senders.
+
+CURRENT CONFIGURATION:
+✓ Email Monitoring: Configured for Gmail IMAP/SMTP
+✓ LLM Service: Connected to Ollama (llama3.2:1b model)
+✓ MCP Server: Processing LAS files with Python scripts
+✓ Filter Emails: dhananjayshahane24@gmail.com, rkumar.emails@gmail.com
+
+ENVIRONMENT VARIABLES (Already Configured):
+- EMAIL_USER: Gmail account for sending/receiving
+- EMAIL_PASSWORD: Gmail app password for authentication
+- FILTER_EMAILS: Comma-separated list of allowed sender emails
+- OLLAMA_ENDPOINT: AI service endpoint for natural language processing
+
+AVAILABLE LAS FILES:
+- sample_well_01.las (for basic well data, depth analysis)
+- production_well_02.las (for production data, gamma ray analysis)
+
+AVAILABLE SCRIPTS:
+- depth_visualization.py (generates depth vs log curves)
+- gamma_ray_analyzer.py (statistical analysis and charts)
+
+HOW IT WORKS:
+1. System monitors emails from filtered addresses
+2. AI analyzes email content and determines required script/file
+3. Python script processes LAS file and generates PNG visualization
+4. Result is emailed back to sender with attachment
+
+SYSTEM STATUS:
+- Email Monitor: Online (checking every 60 seconds)
+- LLM Service: Online (natural language processing active)
+- MCP Server: Online (script execution ready)
+- WebSocket: Real-time dashboard updates enabled
+
+DASHBOARD ACCESS:
+The web dashboard shows real-time processing status, email logs,
+and system health at the root URL when the application is running.
+
+TROUBLESHOOTING:
+- Check workflow logs for Python script execution details
+- Verify email credentials if connection fails
+- Ensure Ollama endpoint is accessible for AI processing
