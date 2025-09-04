@@ -1,0 +1,62 @@
+Workflow Overview
+Extract email sender and body: Use Python’s built-in email library or tools like MCP to get the sender’s email address and the body content from incoming emails.
+
+LLM intent detection: Pass the email body to an LLM (configured in MCP) to identify what script and tool are needed, as well as any additional resources (like LAS files).
+
+Resource access: LLM calls MCP resources (mcp.recorses()) to access or preprocess the specified LAS file.
+
+Script execution: Pass the LAS file to the required MCP script or tool as determined by LLM, then execute the script against the file.
+
+Output image generation: The script generates a PNG output, which is saved in a dynamically created folder (named with a timestamp).
+
+Send output: The generated PNG file is then attached and sent to the originating email address.
+
+How Each Step Works
+Extract Email Details
+Use Python’s imaplib and email modules to fetch unread emails and extract “From” and body sections.
+
+For multipart messages, focus on extracting the plain-text part for LLM processing.
+
+Integrate with LLM via MCP
+Pass the body text to the LLM endpoint or MCP toolkit.
+
+The LLM determines needed script, LAS file, and tool based on email instructions (for example, “Analyze LAS file with tool XYZ”) and returns specifics.
+
+Resource Handling
+Use MCP functions (mcp.recorses()) to load or identify the target LAS file for processing―these might reside locally or be referenced via cloud storage.
+
+Script Execution
+The identified script (from LLM output) is called via MCP, ingesting the LAS file as an argument.
+
+Script runs, reading data and generating its result—usually a plot/image.
+
+Dynamic Output Saving
+Use Python’s datetime module to create a unique timestamp-named folder.
+
+Save the PNG output from script into this folder.
+
+Email Output
+Use Python’s smtplib or MCP tool to send email and attach generated images, using extracted sender’s email address.
+
+Quick Python Code Structure Example
+python
+# 1) Extract email details (sender, body)
+sender_email, body = get_email_details()  # Custom function using email/imaplib
+# 2) Pass body to LLM for instruction extraction
+script_name, las_file = llm_parse_email(body)
+# 3) Load las file via MCP resources
+las_data = mcp.recorses(las_file)
+# 4) Execute script on LAS data and generate PNG
+output_png = mcp.tool(script_name, las_data)
+# 5) Save to timestamp folder
+folder = make_timestamp_folder()
+save_png(output_png, folder)
+# 6) Send result PNG to email sender
+send_email_with_attachment(sender_email, output_png)
+Each step uses standard modules and MCP integration routines.
+
+The LLM’s output must clearly specify which script/tool and LAS file to use, so prompt engineering for your LLM is essential.
+
+For sending emails with attachments, smtplib plus email.mime modules can be used.
+
+This architecture can be adapted to your MCP server and toolchain for seamless automation.
