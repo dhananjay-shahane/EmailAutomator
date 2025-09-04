@@ -1,48 +1,135 @@
-LAS FILE PROCESSING AUTOMATION SYSTEM - SETUP GUIDE
-=======================================================
+LAS FILE PROCESSING AUTOMATION SYSTEM - COMPLETE SETUP GUIDE
+================================================================
 
 OVERVIEW:
 This system automatically processes LAS (Log ASCII Standard) files through email workflows.
 It monitors emails, uses AI to understand processing requests, executes Python scripts,
 and returns visualizations to senders.
 
-CURRENT CONFIGURATION:
-✓ Email Monitoring: Configured for Gmail IMAP/SMTP
-✓ LLM Service: Connected to Ollama (llama3.2:1b model)
-✓ MCP Server: Processing LAS files with Python scripts
+## INSTALLATION INSTRUCTIONS
+
+### Prerequisites:
+1. Replit account (this project runs on Replit platform)
+2. Gmail account with app password enabled
+3. Access to Ollama LLM service (for AI processing)
+
+### Step 1: Clone/Import Project
+- Fork this project in Replit or import from GitHub
+- The project includes all necessary dependencies in package.json
+
+### Step 2: Install Dependencies
+The system will automatically install:
+- Node.js dependencies: Express, TypeScript, Vite, etc.
+- Python dependencies: matplotlib, numpy (for visualizations)
+- Email libraries: nodemailer, imap (for email processing)
+- AI libraries: axios (for LLM communication)
+
+### Step 3: Set Environment Variables
+Configure these secrets in Replit Secrets panel:
+
+**Required Secrets:**
+- EMAIL_USER: Your Gmail address (e.g., your-email@gmail.com)
+- EMAIL_PASSWORD: Gmail App Password (16-character code from Google Account > Security > App Passwords)
+- FILTER_EMAILS: Comma-separated email addresses to monitor (e.g., user1@gmail.com,user2@gmail.com)
+- OLLAMA_ENDPOINT: Your Ollama service URL (e.g., https://yourngrok.ngrok-free.app)
+
+**How to get Gmail App Password:**
+1. Enable 2-factor authentication on your Google account
+2. Go to Google Account > Security > App Passwords
+3. Generate new app password for "Mail"
+4. Use the 16-character code as EMAIL_PASSWORD
+
+### Step 4: Start the Application
+- Click "Run" button in Replit
+- System will start on port 5000
+- Dashboard accessible at your Replit app URL
+
+## HOW THE SYSTEM WORKS
+
+### Email Processing Flow:
+1. **Email Monitoring**: System checks Gmail every 60 seconds for new emails
+2. **Sender Filtering**: Only processes emails from addresses in FILTER_EMAILS list
+3. **AI Analysis**: Ollama LLM analyzes email content using natural language processing
+4. **Script Selection**: AI chooses appropriate Python script and LAS file based on request
+5. **File Processing**: Python script generates visualization (PNG file)
+6. **Response**: System emails result back to sender with attachment
+
+### Supported Request Types:
+- "Please analyze resistivity data" → depth_visualization.py + sample_well_01.las
+- "Generate depth visualization" → depth_visualization.py + sample_well_01.las  
+- "Gamma ray analysis needed" → gamma_ray_analyzer.py + production_well_02.las
+- "Statistical analysis of gamma ray" → gamma_ray_analyzer.py + production_well_02.las
+
+### Real-Time Dashboard Features:
+- Live system status (Email, LLM, MCP Server)
+- Processing queue and email logs
+- Success/failure statistics
+- WebSocket updates for real-time monitoring
+
+## PROJECT STRUCTURE
+
+```
+├── server/                 # Backend Express.js application
+│   ├── services/          # Email, LLM, and MCP services
+│   ├── routes.ts          # API endpoints
+│   └── storage.ts         # Data storage interface
+├── client/                # React frontend dashboard
+│   └── src/               # React components and pages
+├── mcp_resources/         # LAS processing resources
+│   ├── las_files/         # Sample LAS files
+│   └── scripts/           # Python processing scripts
+├── shared/                # Shared TypeScript schemas
+└── output/                # Generated visualization files
+```
+
+## CURRENT CONFIGURATION:
+✓ Email Monitoring: Gmail IMAP/SMTP configured
+✓ LLM Service: Ollama (llama3.2:1b model) connected
+✓ MCP Server: Python script execution ready
 ✓ Filter Emails: dhananjayshahane24@gmail.com, rkumar.emails@gmail.com
+✓ Available Files: sample_well_01.las, production_well_02.las
+✓ Available Scripts: depth_visualization.py, gamma_ray_analyzer.py
 
-ENVIRONMENT VARIABLES (Already Configured):
-- EMAIL_USER: Gmail account for sending/receiving
-- EMAIL_PASSWORD: Gmail app password for authentication
-- FILTER_EMAILS: Comma-separated list of allowed sender emails
-- OLLAMA_ENDPOINT: AI service endpoint for natural language processing
+## USAGE INSTRUCTIONS
 
-AVAILABLE LAS FILES:
-- sample_well_01.las (for basic well data, depth analysis)
-- production_well_02.las (for production data, gamma ray analysis)
+### For End Users (Email Senders):
+1. Send email to the configured Gmail account
+2. Use natural language to describe your LAS processing needs
+3. System will automatically process request and reply with visualization
+4. Example: "Please analyze resistivity data from the well logs"
 
-AVAILABLE SCRIPTS:
-- depth_visualization.py (generates depth vs log curves)
-- gamma_ray_analyzer.py (statistical analysis and charts)
+### For System Administrators:
+1. Monitor dashboard for system health
+2. Check email logs for processing history
+3. Add/remove filter emails via FILTER_EMAILS secret
+4. Update LAS files in mcp_resources/las_files/
+5. Modify Python scripts in mcp_resources/scripts/
 
-HOW IT WORKS:
-1. System monitors emails from filtered addresses
-2. AI analyzes email content and determines required script/file
-3. Python script processes LAS file and generates PNG visualization
-4. Result is emailed back to sender with attachment
+## TROUBLESHOOTING
 
-SYSTEM STATUS:
-- Email Monitor: Online (checking every 60 seconds)
-- LLM Service: Online (natural language processing active)
-- MCP Server: Online (script execution ready)
-- WebSocket: Real-time dashboard updates enabled
+### Email Issues:
+- Verify Gmail app password is correct (not regular password)
+- Check 2-factor authentication is enabled
+- Ensure EMAIL_USER format is correct
 
-DASHBOARD ACCESS:
-The web dashboard shows real-time processing status, email logs,
-and system health at the root URL when the application is running.
+### LLM Connection Issues:
+- Verify OLLAMA_ENDPOINT is accessible
+- Check Ollama service is running and responsive
+- Test endpoint manually: curl https://your-endpoint/api/generate
 
-TROUBLESHOOTING:
-- Check workflow logs for Python script execution details
-- Verify email credentials if connection fails
-- Ensure Ollama endpoint is accessible for AI processing
+### Python Script Issues:
+- Check workflow logs for detailed error messages
+- Verify matplotlib and numpy are installed
+- Ensure LAS files exist in mcp_resources/las_files/
+
+### System Status:
+- All components should show "Online" in dashboard
+- If "Offline" or "Warning", check specific component logs
+- Restart application if issues persist
+
+## SUCCESS EXAMPLE:
+Recent successful processing:
+✅ Email received from: Dhananjay Shahane <dhananjayshahane24@gmail.com>
+✅ Subject: "Well resistivity" 
+✅ AI selected: depth_visualization.py + sample_well_01.las
+✅ Visualization generated and emailed back successfully
