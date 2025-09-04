@@ -50,7 +50,7 @@ Respond only with valid JSON:`;
         headers: {
           'Content-Type': 'application/json',
         },
-        timeout: 30000,
+        timeout: 45000,
       });
 
       const responseText = response.data.response;
@@ -105,7 +105,7 @@ Respond only with valid JSON:`;
         prompt: 'Test connection. Respond with: OK',
         stream: false,
       }, {
-        timeout: 5000,
+        timeout: 15000,
       });
 
       const responseTime = Date.now() - startTime;
