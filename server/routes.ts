@@ -15,7 +15,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // WebSocket for real-time updates
-  const wss = new WebSocketServer({ server: httpServer });
+  const wss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/api/ws' // Use a specific path to avoid conflicts with Vite's WebSocket
+  });
   
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected');

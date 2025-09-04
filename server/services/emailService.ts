@@ -1,4 +1,4 @@
-import * as Imap from 'imap';
+import Imap from 'imap';
 import * as nodemailer from 'nodemailer';
 import { simpleParser } from 'mailparser';
 

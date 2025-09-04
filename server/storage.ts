@@ -79,6 +79,12 @@ export class MemStorage implements IStorage {
       ...insertLog,
       id,
       subject: insertLog.subject || null,
+      llmResponse: insertLog.llmResponse || null,
+      mcpScript: insertLog.mcpScript || null,
+      lasFile: insertLog.lasFile || null,
+      outputFile: insertLog.outputFile || null,
+      errorMessage: insertLog.errorMessage || null,
+      processingTime: insertLog.processingTime || null,
       createdAt: new Date(),
       completedAt: null,
     };
