@@ -73,25 +73,25 @@ Respond only with valid JSON:`;
       } catch (parseError) {
         console.error('Failed to parse LLM response as JSON:', responseText);
         
-        // Fallback response
+        // Fallback response using available LAS files
         return {
           script: 'depth_visualization.py',
-          lasFile: 'unknown.las',
+          lasFile: 'sample_well_01.las',
           tool: 'depth_plotter',
           confidence: 0.1,
-          reasoning: 'Failed to parse LLM response, using default values',
+          reasoning: 'Failed to parse LLM response, using available LAS file',
         };
       }
     } catch (error) {
       console.error('LLM service error:', error);
       
-      // Fallback response for network/API errors
+      // Fallback response for network/API errors using available LAS files
       return {
         script: 'depth_visualization.py',
-        lasFile: 'unknown.las',
+        lasFile: 'production_well_02.las',
         tool: 'depth_plotter',
         confidence: 0.0,
-        reasoning: 'LLM service unavailable, using default values',
+        reasoning: 'LLM service unavailable, using available LAS file',
       };
     }
   }
