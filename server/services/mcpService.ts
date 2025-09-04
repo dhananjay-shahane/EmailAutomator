@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { spawn } from 'child_process';
 
 export interface MCPResource {
   name: string;
@@ -225,6 +226,45 @@ export class MCPService {
       total: this.availableTools.length,
       tools: [...this.availableTools],
     };
+  }
+
+  private async executeScript(scriptPath: string, lasFilePath: string, outputPath: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log(`Executing script: ${scriptPath} with LAS file: ${lasFilePath}`);
+      
+      const pythonProcess = spawn('python3', [scriptPath, lasFilePath, outputPath], {
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        stdout += data.toString();
+        console.log(`Python stdout: ${data.toString().trim()}`);
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        stderr += data.toString();
+        console.error(`Python stderr: ${data.toString().trim()}`);
+      });
+
+      pythonProcess.on('close', (code) => {
+        if (code === 0) {
+          console.log(`Script executed successfully: ${scriptPath}`);
+          resolve();
+        } else {
+          console.error(`Script execution failed with code ${code}`);
+          console.error(`Stderr: ${stderr}`);
+          reject(new Error(`Script execution failed with code ${code}: ${stderr}`));
+        }
+      });
+
+      pythonProcess.on('error', (error) => {
+        console.error(`Failed to start Python process: ${error.message}`);
+        reject(error);
+      });
+    });
   }
 
   async testConnection(): Promise<boolean> {

@@ -13,7 +13,7 @@ export class LLMService {
   private model: string;
 
   constructor() {
-    this.endpoint = process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app/';
+    this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
     this.model = 'llama3.2:1b';
   }
 
@@ -107,6 +107,9 @@ Respond only with valid JSON:`;
         prompt: 'Test connection. Respond with: OK',
         stream: false,
       }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
         timeout: 15000,
       });
 
