@@ -201,11 +201,11 @@ export default function Dashboard() {
             />
             
             <StatusCard
-              title="Ollama LLM"
+              title={llmStatus?.metadata?.provider ? `${llmStatus.metadata.provider.charAt(0).toUpperCase() + llmStatus.metadata.provider.slice(1)} LLM` : 'LLM Integration'}
               value={llmStatus?.status === 'online' ? 'Connected' : 'Disconnected'}
               icon="robot"
               status={llmStatus?.status as 'online' | 'warning' | 'offline' || 'offline'}
-              subtitle={llmStatus?.metadata?.model ? `Model: ${llmStatus.metadata.model}` : 'No model loaded'}
+              subtitle={llmStatus?.metadata?.model ? `Model: ${llmStatus.metadata.model}` : 'Not configured'}
             />
             
             <StatusCard
