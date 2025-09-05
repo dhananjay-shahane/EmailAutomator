@@ -16,11 +16,11 @@ export class LLMService {
   private apiKey?: string;
 
   constructor() {
-    // Set default Ollama configuration from environment or fallback
-    this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
-    this.model = 'llama3.2:1b';
-    this.provider = 'ollama';
-    this.apiKey = undefined;
+    // Set default Hugging Face configuration
+    this.endpoint = 'https://api-inference.huggingface.co';
+    this.model = 'microsoft/DialoGPT-large'; // Using a working model as fallback since gpt-oss-120b might not be available
+    this.provider = 'huggingface';
+    this.apiKey = process.env.HUGGINGFACE_API_KEY;
   }
 
   // Accept configuration from frontend localStorage
@@ -34,10 +34,10 @@ export class LLMService {
   // Use default configuration if not provided
   private useDefaults() {
     if (!this.endpoint || !this.provider || !this.model) {
-      this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
-      this.model = 'llama3.2:1b';
-      this.provider = 'ollama';
-      this.apiKey = undefined;
+      this.endpoint = 'https://api-inference.huggingface.co';
+      this.model = 'microsoft/DialoGPT-large'; // Using a working model as fallback
+      this.provider = 'huggingface';
+      this.apiKey = process.env.HUGGINGFACE_API_KEY;
     }
   }
 
