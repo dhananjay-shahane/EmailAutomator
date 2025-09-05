@@ -166,13 +166,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update system status with new configuration
       await storage.updateSystemStatus('llm', {
         component: 'llm',
-        status: 'offline', // Will be tested separately
+        status: 'online', // Configuration is complete, mark as online
         metadata: {
           provider,
           model,
           endpoint: endpoint || null,
           hasApiKey: !!apiKey,
           lastConfigUpdate: new Date().toISOString(),
+          configured: true,
         },
       });
 
