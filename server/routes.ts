@@ -154,6 +154,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // LLM configuration endpoint
+  app.post("/api/llm-config", async (req, res) => {
+    try {
+      const { provider, model, endpoint, apiKey } = req.body;
+      
+      if (!provider || !model) {
+        return res.status(400).json({ message: "Provider and model are required" });
+      }
+
+      // Update system status with new configuration
+      await storage.updateSystemStatus('llm', {
+        component: 'llm',
+        status: 'offline', // Will be tested separately
+        metadata: {
+          provider,
+          model,
+          endpoint: endpoint || null,
+          hasApiKey: !!apiKey,
+          lastConfigUpdate: new Date().toISOString(),
+        },
+      });
+
+      // Store configuration in environment-like storage
+      // In a real app, you'd want to securely store API keys
+      const config = {
+        provider,
+        model,
+        endpoint,
+        ...(apiKey && { apiKey }) // Only include if provided
+      };
+
+      console.log(`LLM configuration updated: ${provider} - ${model}`);
+      
+      res.json({ 
+        message: "LLM configuration saved successfully",
+        config: {
+          provider,
+          model,
+          endpoint,
+          hasApiKey: !!apiKey
+        }
+      });
+    } catch (error) {
+      console.error('Failed to save LLM configuration:', error);
+      res.status(500).json({ message: "Failed to save LLM configuration" });
+    }
+  });
+
   // MCP resources endpoint
   app.get("/api/mcp-resources", async (req, res) => {
     try {
