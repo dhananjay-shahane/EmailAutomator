@@ -8,6 +8,8 @@ import EmailConfig from "@/components/EmailConfig";
 import LLMPanel from "@/components/LLMPanel";
 import MCPPanel from "@/components/MCPPanel";
 import ProcessingQueue from "@/components/ProcessingQueue";
+import DirectQueryPanel from "@/components/DirectQueryPanel";
+import OutputViewer from "@/components/OutputViewer";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -221,6 +223,12 @@ export default function Dashboard() {
               status="online"
               subtitle={`+${stats.processedToday} from yesterday`}
             />
+          </div>
+
+          {/* Direct Query and Output Viewer */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <DirectQueryPanel />
+            <OutputViewer />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

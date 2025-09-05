@@ -164,6 +164,241 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Process direct query endpoint
+  app.post("/api/process-query", async (req, res) => {
+    try {
+      const { query } = req.body;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: "Query is required" });
+      }
+
+      console.log(`Processing direct query: ${query}`);
+      
+      // Create email log entry for the direct query
+      const emailLog = await storage.createEmailLog({
+        sender: "direct-query@system.local",
+        subject: "Direct Query Processing",
+        body: query,
+        status: 'processing',
+        llmResponse: null,
+        mcpScript: null,
+        lasFile: null,
+        outputFile: null,
+        errorMessage: null,
+        processingTime: null,
+        completedAt: null,
+      });
+
+      broadcast({ type: 'new_email', emailLog });
+
+      try {
+        // Analyze query with LLM
+        console.log('Analyzing query with LLM...');
+        const llmResponse = await llmService.analyzeEmailContent(query);
+        
+        await storage.updateEmailLog(emailLog.id, {
+          llmResponse: llmResponse,
+          mcpScript: llmResponse.script,
+          lasFile: llmResponse.lasFile,
+        });
+
+        // Process with MCP
+        console.log(`Processing LAS file: ${llmResponse.lasFile} with script: ${llmResponse.script}`);
+        const mcpResult = await mcpService.processLASFile(
+          llmResponse.lasFile,
+          llmResponse.script,
+          llmResponse.tool
+        );
+
+        if (mcpResult.success && mcpResult.outputPath) {
+          await storage.updateEmailLog(emailLog.id, {
+            status: 'completed',
+            outputFile: mcpResult.outputPath,
+            processingTime: mcpResult.processingTime,
+            completedAt: new Date(),
+          });
+
+          console.log(`Direct query processed successfully`);
+          
+          const updatedLog = await storage.getEmailLog(emailLog.id);
+          broadcast({ type: 'email_processed', emailLog: updatedLog });
+
+          res.json({
+            id: emailLog.id,
+            query: query,
+            llmResponse: llmResponse,
+            outputFile: mcpResult.outputPath,
+            status: 'completed',
+            processingTime: mcpResult.processingTime,
+          });
+        } else {
+          throw new Error(mcpResult.error || 'MCP processing failed');
+        }
+
+      } catch (processingError) {
+        console.error('Direct query processing error:', processingError);
+        
+        await storage.updateEmailLog(emailLog.id, {
+          status: 'error',
+          errorMessage: processingError instanceof Error ? processingError.message : 'Unknown error',
+          completedAt: new Date(),
+        });
+
+        const updatedLog = await storage.getEmailLog(emailLog.id);
+        broadcast({ type: 'email_processed', emailLog: updatedLog });
+
+        res.status(500).json({
+          id: emailLog.id,
+          query: query,
+          llmResponse: null,
+          status: 'error',
+          errorMessage: processingError instanceof Error ? processingError.message : 'Unknown error',
+        });
+      }
+
+    } catch (error) {
+      res.status(500).json({ message: "Failed to process query" });
+    }
+  });
+
+  // Output files endpoints
+  app.get("/api/output-files", async (req, res) => {
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      const outputDir = path.resolve(process.cwd(), 'output');
+      
+      if (!fs.existsSync(outputDir)) {
+        return res.json([]);
+      }
+
+      const folders = fs.readdirSync(outputDir, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent => dirent.name)
+        .sort((a, b) => b.localeCompare(a)); // Sort newest first
+
+      const result = [];
+
+      for (const folderName of folders) {
+        const folderPath = path.join(outputDir, folderName);
+        const files = fs.readdirSync(folderPath, { withFileTypes: true })
+          .filter(dirent => dirent.isFile())
+          .map(dirent => {
+            const filePath = path.join(folderPath, dirent.name);
+            const stats = fs.statSync(filePath);
+            return {
+              path: path.relative(process.cwd(), filePath),
+              name: dirent.name,
+              timestamp: stats.mtime.toISOString(),
+              size: stats.size,
+              isImage: /\.(png|jpg|jpeg|gif|bmp|svg)$/i.test(dirent.name),
+            };
+          })
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        if (files.length > 0) {
+          const folderStats = fs.statSync(folderPath);
+          result.push({
+            name: folderName,
+            files: files,
+            createdAt: folderStats.birthtime.toISOString(),
+          });
+        }
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching output files:', error);
+      res.status(500).json({ message: "Failed to fetch output files" });
+    }
+  });
+
+  app.get("/api/output-files/view", async (req, res) => {
+    try {
+      const { path: filePath } = req.query;
+      
+      if (!filePath || typeof filePath !== 'string') {
+        return res.status(400).json({ message: "File path is required" });
+      }
+
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      const fullPath = path.resolve(process.cwd(), filePath);
+      
+      // Security check: ensure the file is within the output directory
+      const outputDir = path.resolve(process.cwd(), 'output');
+      if (!fullPath.startsWith(outputDir)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      if (!fs.existsSync(fullPath)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+
+      // Determine content type based on file extension
+      const ext = path.extname(fullPath).toLowerCase();
+      const contentTypeMap: { [key: string]: string } = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.bmp': 'image/bmp',
+        '.svg': 'image/svg+xml',
+      };
+
+      const contentType = contentTypeMap[ext] || 'application/octet-stream';
+      
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+      
+      const fileStream = fs.createReadStream(fullPath);
+      fileStream.pipe(res);
+      
+    } catch (error) {
+      console.error('Error serving file:', error);
+      res.status(500).json({ message: "Failed to serve file" });
+    }
+  });
+
+  app.get("/api/output-files/download", async (req, res) => {
+    try {
+      const { path: filePath } = req.query;
+      
+      if (!filePath || typeof filePath !== 'string') {
+        return res.status(400).json({ message: "File path is required" });
+      }
+
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      const fullPath = path.resolve(process.cwd(), filePath);
+      
+      // Security check: ensure the file is within the output directory
+      const outputDir = path.resolve(process.cwd(), 'output');
+      if (!fullPath.startsWith(outputDir)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      if (!fs.existsSync(fullPath)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+
+      const fileName = path.basename(fullPath);
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      
+      const fileStream = fs.createReadStream(fullPath);
+      fileStream.pipe(res);
+      
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      res.status(500).json({ message: "Failed to download file" });
+    }
+  });
+
   // Demo data endpoint for showcasing functionality
   app.post("/api/create-demo-data", async (req, res) => {
     try {
