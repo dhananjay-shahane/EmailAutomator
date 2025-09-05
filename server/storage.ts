@@ -32,11 +32,12 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.emailLogs = new Map();
     this.systemStatuses = new Map();
+    this.llmConfig = undefined;
     
     // Initialize default system statuses
     const defaultStatuses = [
-      { component: 'email_monitor', status: 'online' as const, metadata: { lastCheck: new Date().toISOString() } },
-      { component: 'llm', status: 'online' as const, metadata: { model: 'llama3.2:1b', endpoint: 'https://88c46355da8c.ngrok-free.app/' } },
+      { component: 'email_monitor', status: 'offline' as const, metadata: { lastCheck: new Date().toISOString() } },
+      { component: 'llm', status: 'offline' as const, metadata: { configured: false } },
       { component: 'mcp_server', status: 'online' as const, metadata: { initialized: true } },
     ];
     

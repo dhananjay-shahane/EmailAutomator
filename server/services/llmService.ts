@@ -16,10 +16,10 @@ export class LLMService {
   private apiKey?: string;
 
   constructor() {
-    // Default values - will be overridden by loadConfig
+    // No default values - must be configured by user
     this.endpoint = '';
-    this.model = 'llama3.2:1b';
-    this.provider = 'ollama';
+    this.model = '';
+    this.provider = '';
     this.apiKey = undefined;
   }
 
@@ -31,10 +31,10 @@ export class LLMService {
       this.endpoint = config.endpoint ? config.endpoint.replace(/\/$/, '') : '';
       this.apiKey = config.apiKey;
     } else {
-      // Set reasonable defaults if no config is found
-      this.provider = 'ollama';
-      this.model = 'llama3.2:1b';
-      this.endpoint = 'http://localhost:11434';
+      // No defaults - user must configure
+      this.provider = '';
+      this.model = '';
+      this.endpoint = '';
       this.apiKey = undefined;
     }
   }
@@ -124,11 +124,11 @@ Respond only with valid JSON:`;
   async testConnection(): Promise<{ success: boolean; responseTime?: number; error?: string }> {
     await this.loadConfig();
     
-    if (!this.endpoint) {
+    if (!this.endpoint || !this.provider || !this.model) {
       return {
         success: false,
         responseTime: 0,
-        error: 'No endpoint configured. Please configure LLM settings first.'
+        error: 'LLM not configured. Please configure provider, model, and endpoint in settings.'
       };
     }
     

@@ -61,7 +61,7 @@ const GEMINI_MODELS = [
 export default function LLMPanel({ status }: LLMPanelProps) {
   const { toast } = useToast();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [provider, setProvider] = useState('ollama');
+  const [provider, setProvider] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
   const [endpoint, setEndpoint] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -99,9 +99,9 @@ export default function LLMPanel({ status }: LLMPanelProps) {
   });
 
   const isConnected = status?.status === 'online';
-  const currentEndpoint = status?.metadata?.endpoint || 'https://88c46355da8c.ngrok-free.app/';
-  const currentModel = status?.metadata?.model || 'llama3.2:1b';
-  const currentProvider = status?.metadata?.provider || 'ollama';
+  const currentEndpoint = status?.metadata?.endpoint || '';
+  const currentModel = status?.metadata?.model || '';
+  const currentProvider = status?.metadata?.provider || '';
   const responseTime = status?.metadata?.responseTime || '1.2';
   const successRate = 94; // This would come from historical data
 
@@ -273,7 +273,7 @@ export default function LLMPanel({ status }: LLMPanelProps) {
           <label className="text-sm font-medium text-foreground">Provider</label>
           <div className="bg-muted rounded-md px-3 py-2">
             <span className="text-sm font-mono text-foreground" data-testid="text-llm-provider">
-              {LLM_PROVIDERS.find(p => p.value === currentProvider)?.label || 'Ollama'}
+              {currentProvider ? LLM_PROVIDERS.find(p => p.value === currentProvider)?.label : 'Not configured'}
             </span>
           </div>
         </div>
@@ -281,7 +281,7 @@ export default function LLMPanel({ status }: LLMPanelProps) {
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Model</label>
           <div className="bg-muted rounded-md px-3 py-2">
-            <span className="text-sm font-mono text-foreground" data-testid="text-llm-model">{currentModel}</span>
+            <span className="text-sm font-mono text-foreground" data-testid="text-llm-model">{currentModel || 'Not configured'}</span>
           </div>
         </div>
 
@@ -289,7 +289,7 @@ export default function LLMPanel({ status }: LLMPanelProps) {
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Endpoint</label>
             <div className="bg-muted rounded-md px-3 py-2">
-              <span className="text-sm font-mono text-foreground" data-testid="text-llm-endpoint">{currentEndpoint}</span>
+              <span className="text-sm font-mono text-foreground" data-testid="text-llm-endpoint">{currentEndpoint || 'Not configured'}</span>
             </div>
           </div>
         )}
