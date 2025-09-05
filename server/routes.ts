@@ -128,15 +128,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metadata: { lastTest: new Date().toISOString() },
       });
 
-      await storage.updateSystemStatus('llm', {
-        component: 'llm',
-        status: llmTest.success ? 'online' : 'offline',
-        metadata: { 
-          lastTest: new Date().toISOString(),
-          responseTime: llmTest.responseTime,
-          error: llmTest.error,
-        },
-      });
+      // Don't override configured status unless specifically testing
+      const currentLlmStatus = await storage.getSystemStatus();
+      const currentLlm = currentLlmStatus.find(s => s.component === 'llm');
+      
+      // Only update status if not configured, or if it was already offline
+      const shouldUpdateStatus = !currentLlm?.metadata?.configured || currentLlm.status === 'offline';
+      
+      if (shouldUpdateStatus) {
+        await storage.updateSystemStatus('llm', {
+          component: 'llm',
+          status: llmTest.success ? 'online' : 'offline',
+          metadata: { 
+            ...currentLlm?.metadata,
+            lastTest: new Date().toISOString(),
+            responseTime: llmTest.responseTime,
+            error: llmTest.error,
+          },
+        });
+      } else {
+        // Just update the test metadata, keep the existing status
+        await storage.updateSystemStatus('llm', {
+          component: 'llm',
+          status: currentLlm.status,
+          metadata: { 
+            ...currentLlm.metadata,
+            lastTest: new Date().toISOString(),
+            responseTime: llmTest.responseTime,
+            error: llmTest.error,
+          },
+        });
+      }
 
       await storage.updateSystemStatus('mcp_server', {
         component: 'mcp_server',
