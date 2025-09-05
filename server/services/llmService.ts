@@ -255,6 +255,17 @@ Respond only with valid JSON:`;
     } else {
       this.useDefaults();
     }
+    
+    console.log(`CheckClarification - Provider: ${this.provider}, Model: ${this.model}, Endpoint: ${this.endpoint}`);
+    
+    // Validate configuration
+    if (this.provider === 'huggingface' && !this.model.includes('gpt-oss') && !this.endpoint) {
+      throw new Error('Hugging Face endpoint not configured');
+    }
+    
+    if (this.provider === 'huggingface' && !this.apiKey) {
+      throw new Error('Hugging Face API key not configured');
+    }
 
     const prompt = `Analyze this LAS analysis query and determine if it needs clarification:
 
@@ -389,22 +400,43 @@ Respond only with valid JSON:`;
       this.useDefaults();
     }
     
-    console.log(`Testing LLM connection - Provider: ${this.provider}, Model: ${this.model}, Endpoint: ${this.endpoint}`);
+    console.log(`Testing LLM connection - Provider: ${this.provider}, Model: ${this.model}, Endpoint: ${this.endpoint}, API Key: ${this.apiKey ? 'Set' : 'Not set'}`);
     
-    if (!this.endpoint || !this.provider || !this.model) {
-      return {
-        success: false,
-        responseTime: 0,
-        error: 'LLM not configured. Please configure provider, model, and endpoint in settings.'
-      };
-    }
-    
-    if (this.provider === 'huggingface' && !this.apiKey) {
-      return {
-        success: false,
-        responseTime: 0,
-        error: 'Hugging Face API key is required for authentication.'
-      };
+    // For Hugging Face, we need either endpoint or it's a gpt-oss model
+    if (this.provider === 'huggingface') {
+      if (!this.model) {
+        return {
+          success: false,
+          responseTime: 0,
+          error: 'Please configure the model name in settings.'
+        };
+      }
+      
+      if (!this.apiKey) {
+        return {
+          success: false,
+          responseTime: 0,
+          error: 'Hugging Face API key is required for authentication.'
+        };
+      }
+      
+      // GPT-OSS models don't need endpoint configured since they use router
+      if (!this.model.includes('gpt-oss') && !this.endpoint) {
+        return {
+          success: false,
+          responseTime: 0,
+          error: 'Please configure the endpoint URL in settings or use a GPT-OSS model.'
+        };
+      }
+    } else {
+      // For non-Hugging Face providers, we need all fields
+      if (!this.endpoint || !this.provider || !this.model) {
+        return {
+          success: false,
+          responseTime: 0,
+          error: 'LLM not configured. Please configure provider, model, and endpoint in settings.'
+        };
+      }
     }
     
     const startTime = Date.now();
