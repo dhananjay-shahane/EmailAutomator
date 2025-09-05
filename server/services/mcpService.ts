@@ -231,7 +231,9 @@ export class MCPService {
     return new Promise((resolve, reject) => {
       console.log(`Executing script: ${scriptPath} with LAS file: ${lasFilePath}`);
       
-      const pythonProcess = spawn('python3', [scriptPath, lasFilePath, outputPath], {
+      // Use virtual environment python with all dependencies installed
+      const pythonPath = path.join(process.cwd(), '.pythonlibs', 'bin', 'python3');
+      const pythonProcess = spawn(pythonPath, [scriptPath, lasFilePath, outputPath], {
         stdio: ['pipe', 'pipe', 'pipe']
       });
 

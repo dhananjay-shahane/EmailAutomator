@@ -16,11 +16,11 @@ export class LLMService {
   private apiKey?: string;
 
   constructor() {
-    // Set default Hugging Face configuration
-    this.endpoint = 'https://api-inference.huggingface.co';
-    this.model = 'microsoft/DialoGPT-large'; // Using a working model as fallback since gpt-oss-120b might not be available
-    this.provider = 'huggingface';
-    this.apiKey = process.env.HUGGINGFACE_API_KEY;
+    // Configure from environment variables with fallback defaults
+    this.endpoint = process.env.LLM_ENDPOINT || '';
+    this.model = process.env.LLM_MODEL || '';
+    this.provider = process.env.LLM_PROVIDER || 'huggingface';
+    this.apiKey = process.env.HUGGINGFACE_API_KEY || process.env.LLM_API_KEY;
   }
 
   // Accept configuration from frontend localStorage
@@ -34,10 +34,11 @@ export class LLMService {
   // Use default configuration if not provided
   private useDefaults() {
     if (!this.endpoint || !this.provider || !this.model) {
-      this.endpoint = 'https://api-inference.huggingface.co';
-      this.model = 'microsoft/DialoGPT-large'; // Using a working model as fallback
-      this.provider = 'huggingface';
-      this.apiKey = process.env.HUGGINGFACE_API_KEY;
+      // Only use defaults if not configured via environment or frontend
+      this.endpoint = process.env.LLM_ENDPOINT || '';
+      this.model = process.env.LLM_MODEL || '';
+      this.provider = process.env.LLM_PROVIDER || 'huggingface';
+      this.apiKey = process.env.HUGGINGFACE_API_KEY || process.env.LLM_API_KEY;
     }
   }
 
@@ -125,19 +126,42 @@ Example responses:
 Respond only with valid JSON:`;
 
     try {
-      const response = await axios.post(`${this.endpoint}/api/generate`, {
-        model: this.model,
-        prompt,
-        stream: false,
-        format: 'json',
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        timeout: 45000,
-      });
+      let response;
+      
+      if (this.provider === 'huggingface') {
+        // Hugging Face API format
+        response = await axios.post(`${this.endpoint}/models/${this.model}`, {
+          inputs: prompt,
+          parameters: {
+            max_new_tokens: 500,
+            temperature: 0.7,
+            return_full_text: false
+          }
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`,
+          },
+          timeout: 45000,
+        });
+      } else {
+        // Ollama API format (fallback)
+        response = await axios.post(`${this.endpoint}/api/generate`, {
+          model: this.model,
+          prompt,
+          stream: false,
+          format: 'json',
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 45000,
+        });
+      }
 
-      const responseText = response.data.response;
+      const responseText = this.provider === 'huggingface' ? 
+        (Array.isArray(response.data) ? response.data[0]?.generated_text : response.data.generated_text) : 
+        response.data.response;
       
       try {
         const parsed = JSON.parse(responseText);
@@ -224,19 +248,40 @@ Example responses:
 Respond only with valid JSON:`;
 
     try {
-      const response = await axios.post(`${this.endpoint}/api/generate`, {
-        model: this.model,
-        prompt,
-        stream: false,
-        format: 'json',
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        timeout: 30000,
-      });
+      let response;
+      
+      if (this.provider === 'huggingface') {
+        response = await axios.post(`${this.endpoint}/models/${this.model}`, {
+          inputs: prompt,
+          parameters: {
+            max_new_tokens: 200,
+            temperature: 0.3,
+            return_full_text: false
+          }
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`,
+          },
+          timeout: 30000,
+        });
+      } else {
+        response = await axios.post(`${this.endpoint}/api/generate`, {
+          model: this.model,
+          prompt,
+          stream: false,
+          format: 'json',
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000,
+        });
+      }
 
-      const responseText = response.data.response;
+      const responseText = this.provider === 'huggingface' ? 
+        (Array.isArray(response.data) ? response.data[0]?.generated_text : response.data.generated_text) : 
+        response.data.response;
       
       try {
         const parsed = JSON.parse(responseText);
@@ -275,16 +320,35 @@ Respond only with valid JSON:`;
     const startTime = Date.now();
     
     try {
-      const response = await axios.post(`${this.endpoint}/api/generate`, {
-        model: this.model,
-        prompt: 'Test connection. Respond with: OK',
-        stream: false,
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        timeout: 15000,
-      });
+      let response;
+      
+      if (this.provider === 'huggingface') {
+        response = await axios.post(`${this.endpoint}/models/${this.model}`, {
+          inputs: 'Test connection. Respond with: OK',
+          parameters: {
+            max_new_tokens: 10,
+            temperature: 0.1,
+            return_full_text: false
+          }
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`,
+          },
+          timeout: 15000,
+        });
+      } else {
+        response = await axios.post(`${this.endpoint}/api/generate`, {
+          model: this.model,
+          prompt: 'Test connection. Respond with: OK',
+          stream: false,
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 15000,
+        });
+      }
 
       const responseTime = Date.now() - startTime;
       
