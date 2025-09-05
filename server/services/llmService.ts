@@ -192,42 +192,11 @@ Respond only with valid JSON:`;
         };
       } catch (parseError) {
         console.error('Failed to parse clarification response as JSON:', responseText);
-        // Fallback logic
-        const hasGamma = query.toLowerCase().includes('gamma');
-        const hasDepth = query.toLowerCase().includes('depth') || query.toLowerCase().includes('plot');
-        const hasSpecific = hasGamma || hasDepth;
-        
-        return {
-          needsClarification: !hasSpecific,
-          confidence: hasSpecific ? 0.8 : 0.3,
-          suggestions: hasSpecific ? [] : [
-            "Gamma ray analysis with production_well_02.las",
-            "Depth visualization with sample_well_01.las",
-            "Tell me more about your specific analysis needs"
-          ],
-          message: hasSpecific ? 
-            "I understand your request. Let me process that for you." :
-            "I'm not quite sure what type of analysis you need. Could you clarify?"
-        };
+        throw new Error('Invalid JSON response from LLM service');
       }
     } catch (error) {
       console.error('LLM clarification error:', error);
-      // Simple fallback
-      const hasGamma = query.toLowerCase().includes('gamma');
-      const hasDepth = query.toLowerCase().includes('depth') || query.toLowerCase().includes('plot');
-      const hasSpecific = hasGamma || hasDepth;
-      
-      return {
-        needsClarification: !hasSpecific,
-        confidence: hasSpecific ? 0.7 : 0.2,
-        suggestions: hasSpecific ? [] : [
-          "Gamma ray analysis with production_well_02.las",
-          "Depth visualization with sample_well_01.las"
-        ],
-        message: hasSpecific ? 
-          "I understand your request. Let me process that for you." :
-          "I'm not quite sure what type of analysis you need. Could you clarify?"
-      };
+      throw new Error(`LLM service unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

@@ -81,23 +81,7 @@ export default function DirectQueryPanel() {
         body: JSON.stringify({ query: queryText, llmConfig }),
       });
       if (!response.ok) {
-        // If endpoint doesn't exist, create a mock response based on simple heuristics
-        const hasGamma = queryText.toLowerCase().includes('gamma');
-        const hasDepth = queryText.toLowerCase().includes('depth') || queryText.toLowerCase().includes('plot');
-        const hasSpecificScript = hasGamma || hasDepth;
-        
-        return {
-          needsClarification: !hasSpecificScript,
-          confidence: hasSpecificScript ? 0.8 : 0.3,
-          suggestions: hasSpecificScript ? [] : [
-            "Gamma ray analysis with production_well_02.las",
-            "Depth visualization with sample_well_01.las",
-            "Tell me more about your specific analysis needs"
-          ],
-          message: hasSpecificScript ? 
-            "I understand your request. Let me process that for you." :
-            "I'm not quite sure what type of analysis you need. Could you clarify?"
-        };
+        throw new Error(`LLM service returned ${response.status}: ${response.statusText}`);
       }
       return response.json();
     }
@@ -251,10 +235,10 @@ export default function DirectQueryPanel() {
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="flex-1 flex flex-col space-y-4">
+      <CardContent className="flex-1 flex flex-col space-y-4 overflow-hidden">
         {/* Chat Messages */}
-        <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
+        <ScrollArea className="flex-1 pr-4 min-h-0" ref={scrollAreaRef}>
+          <div className="space-y-4 min-h-full">
             {chatMessages.map((message) => (
               <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] ${message.type === 'user' ? 'order-2' : 'order-1'}`}>

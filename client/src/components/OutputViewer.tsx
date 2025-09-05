@@ -147,7 +147,7 @@ export default function OutputViewer() {
                     {folder.name}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {folder.createdAt ? format(new Date(folder.createdAt), 'MMM dd') : 'Unknown'}
+                    {folder.createdAt ? format(new Date(folder.createdAt), 'MMM dd, HH:mm') : 'Unknown time'}
                   </p>
                 </div>
               ))}
@@ -164,7 +164,7 @@ export default function OutputViewer() {
                 {selectedFolder?.name}
               </DialogTitle>
               <DialogDescription>
-                Created on {selectedFolder && selectedFolder.createdAt ? format(new Date(selectedFolder.createdAt), 'MMMM dd, yyyy') : 'Unknown date'} • {selectedFolder?.files.length} files
+                Created on {selectedFolder && selectedFolder.createdAt ? format(new Date(selectedFolder.createdAt), 'MMMM dd, yyyy at HH:mm') : 'Unknown date'} • {selectedFolder?.files.length} files
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-[60vh]">
@@ -183,7 +183,7 @@ export default function OutputViewer() {
                           <span>{formatFileSize(file.size)}</span>
                           <div className="flex items-center">
                             <Clock className="w-3 h-3 mr-1" />
-                            {format(new Date(file.timestamp), 'HH:mm:ss')}
+                            {format(new Date(file.timestamp), 'MMM dd, HH:mm:ss')}
                           </div>
                         </div>
                       </div>
