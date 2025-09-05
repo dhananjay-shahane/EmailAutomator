@@ -93,8 +93,8 @@ export default function SettingsPage() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto p-6 space-y-6">
-          <div className="grid grid-cols-1 gap-6">
+        <main className="flex-1 overflow-auto p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {/* Email Configuration */}
             <div className="space-y-4">
               <div className="border-b pb-2">

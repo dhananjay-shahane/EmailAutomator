@@ -231,14 +231,8 @@ export default function Dashboard() {
             <OutputViewer />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             <ActivityLog emailLogs={emailLogs} />
-            <EmailConfig />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <LLMPanel status={llmStatus} />
-            <MCPPanel status={mcpStatus} />
           </div>
 
           <ProcessingQueue emailLogs={emailLogs} />

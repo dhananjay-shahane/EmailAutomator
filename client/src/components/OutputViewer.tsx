@@ -221,7 +221,7 @@ export default function OutputViewer() {
 
         {/* Image Viewer Dialog */}
         <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
-          <DialogContent className="max-w-6xl max-h-[90vh]">
+          <DialogContent className="max-w-4xl w-[90vw] max-h-[85vh]">
             <DialogHeader>
               <DialogTitle>{selectedImage?.name}</DialogTitle>
               <DialogDescription>
@@ -233,12 +233,12 @@ export default function OutputViewer() {
                 )}
               </DialogDescription>
             </DialogHeader>
-            <div className="overflow-auto rounded-lg bg-secondary/20 p-4 max-h-[60vh]">
+            <div className="flex flex-col items-center p-4 max-h-[55vh]">
               {selectedImage && (
                 <img
                   src={getImageUrl(selectedImage.path)}
                   alt={selectedImage.name}
-                  className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
+                  className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-lg"
                   data-testid={`image-${selectedImage.name}`}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -248,7 +248,7 @@ export default function OutputViewer() {
               )}
             </div>
             {selectedImage && (
-              <div className="flex justify-center pt-2">
+              <div className="flex justify-center pt-2 border-t">
                 <Button
                   onClick={() => downloadFile(selectedImage.path, selectedImage.name)}
                   className="flex items-center gap-2"
