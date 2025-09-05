@@ -16,12 +16,17 @@ export interface IStorage {
   // System status methods
   getSystemStatus(): Promise<SystemStatus[]>;
   updateSystemStatus(component: string, status: InsertSystemStatus): Promise<SystemStatus>;
+  
+  // Configuration methods
+  getLLMConfig(): Promise<{ provider: string; model: string; endpoint?: string; apiKey?: string } | undefined>;
+  setLLMConfig(config: { provider: string; model: string; endpoint?: string; apiKey?: string }): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private emailLogs: Map<string, EmailLog>;
   private systemStatuses: Map<string, SystemStatus>;
+  private llmConfig: { provider: string; model: string; endpoint?: string; apiKey?: string } | undefined;
 
   constructor() {
     this.users = new Map();
@@ -119,6 +124,14 @@ export class MemStorage implements IStorage {
     
     this.systemStatuses.set(component, updated);
     return updated;
+  }
+
+  async getLLMConfig(): Promise<{ provider: string; model: string; endpoint?: string; apiKey?: string } | undefined> {
+    return this.llmConfig;
+  }
+
+  async setLLMConfig(config: { provider: string; model: string; endpoint?: string; apiKey?: string }): Promise<void> {
+    this.llmConfig = config;
   }
 }
 

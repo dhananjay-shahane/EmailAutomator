@@ -176,14 +176,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
-      // Store configuration in environment-like storage
-      // In a real app, you'd want to securely store API keys
+      // Store configuration using storage interface
       const config = {
         provider,
         model,
         endpoint,
         ...(apiKey && { apiKey }) // Only include if provided
       };
+      
+      await storage.setLLMConfig(config);
 
       console.log(`LLM configuration updated: ${provider} - ${model}`);
       

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { storage } from '../storage.js';
 
 export interface LLMResponse {
   script: string;
@@ -11,13 +12,35 @@ export interface LLMResponse {
 export class LLMService {
   private endpoint: string;
   private model: string;
+  private provider: string;
+  private apiKey?: string;
 
   constructor() {
-    this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
+    // Default values - will be overridden by loadConfig
+    this.endpoint = '';
     this.model = 'llama3.2:1b';
+    this.provider = 'ollama';
+    this.apiKey = undefined;
+  }
+
+  private async loadConfig() {
+    const config = await storage.getLLMConfig();
+    if (config) {
+      this.provider = config.provider;
+      this.model = config.model;
+      this.endpoint = config.endpoint ? config.endpoint.replace(/\/$/, '') : '';
+      this.apiKey = config.apiKey;
+    } else {
+      // Set reasonable defaults if no config is found
+      this.provider = 'ollama';
+      this.model = 'llama3.2:1b';
+      this.endpoint = 'http://localhost:11434';
+      this.apiKey = undefined;
+    }
   }
 
   async analyzeEmailContent(emailBody: string): Promise<LLMResponse> {
+    await this.loadConfig();
     const prompt = `Analyze this email request for LAS (Log ASCII Standard) file processing:
 
 Email content: "${emailBody}"
@@ -99,6 +122,16 @@ Respond only with valid JSON:`;
   }
 
   async testConnection(): Promise<{ success: boolean; responseTime?: number; error?: string }> {
+    await this.loadConfig();
+    
+    if (!this.endpoint) {
+      return {
+        success: false,
+        responseTime: 0,
+        error: 'No endpoint configured. Please configure LLM settings first.'
+      };
+    }
+    
     const startTime = Date.now();
     
     try {
