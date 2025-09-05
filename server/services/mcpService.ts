@@ -28,12 +28,9 @@ export class MCPService {
     this.availableTools = [
       'depth_plotter',
       'gamma_analyzer', 
-      'resistivity_tool',
+      'resistivity_analyzer',
       'porosity_calculator',
-      'lithology_detector',
-      'well_correlation',
-      'log_quality_checker',
-      'formation_evaluator'
+      'lithology_classifier'
     ];
 
     this.initializeDirectories();
