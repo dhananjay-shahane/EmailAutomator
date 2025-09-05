@@ -1,4 +1,4 @@
-import { FileCode, Download, Trash2 } from "lucide-react";
+import { FileCode, Download, Trash2, Brain, Code, Play, Image, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface EmailLog {
@@ -13,6 +13,14 @@ interface EmailLog {
   errorMessage: string;
   mcpScript?: string;
   lasFile?: string;
+  llmResponse?: {
+    script: string;
+    lasFile: string;
+    tool: string;
+    confidence: number;
+    reasoning: string;
+  };
+  completedAt?: string;
 }
 
 interface ProcessingQueueProps {
@@ -36,6 +44,98 @@ const formatProcessingTime = (time: number | null) => {
   if (!time) return 'N/A';
   if (time < 1000) return `${time}ms`;
   return `${(time / 1000).toFixed(1)}s`;
+};
+
+const formatTimestamp = (timestamp: string) => {
+  return new Date(timestamp).toLocaleString();
+};
+
+const getProcessingSteps = (log: EmailLog) => {
+  const steps = [
+    {
+      id: 'received',
+      title: 'Query Received',
+      description: `Received query: "${log.body.substring(0, 50)}${log.body.length > 50 ? '...' : ''}"`,
+      icon: <FileCode className="h-4 w-4" />,
+      status: 'completed',
+      timestamp: log.createdAt
+    },
+    {
+      id: 'llm_analysis',
+      title: 'LLM Analysis',
+      description: log.llmResponse ? 
+        `AI selected: ${log.llmResponse.script} with ${log.llmResponse.lasFile} (${(log.llmResponse.confidence * 100).toFixed(0)}% confidence)` :
+        'Analyzing query with AI to determine script and data requirements',
+      icon: <Brain className="h-4 w-4" />,
+      status: log.llmResponse ? 'completed' : (log.status === 'processing' ? 'processing' : 'pending'),
+      timestamp: log.createdAt
+    },
+    {
+      id: 'script_selection',
+      title: 'Script & File Selection',
+      description: log.llmResponse ? 
+        `Script: ${log.llmResponse.script}, LAS File: ${log.llmResponse.lasFile}, Tool: ${log.llmResponse.tool}` :
+        'Waiting for LLM analysis completion',
+      icon: <Code className="h-4 w-4" />,
+      status: log.llmResponse ? 'completed' : 'pending',
+      timestamp: log.createdAt
+    },
+    {
+      id: 'execution',
+      title: 'Script Execution',
+      description: log.status === 'completed' ? 
+        `Python script executed successfully in ${formatProcessingTime(log.processingTime)}` :
+        log.status === 'processing' ? 'Running Python analysis script...' :
+        log.status === 'error' ? `Execution failed: ${log.errorMessage}` :
+        'Waiting to execute script',
+      icon: <Play className="h-4 w-4" />,
+      status: log.status === 'completed' ? 'completed' : 
+              log.status === 'processing' ? 'processing' : 
+              log.status === 'error' ? 'error' : 'pending',
+      timestamp: log.createdAt
+    },
+    {
+      id: 'output_generation',
+      title: 'Output Generation',
+      description: log.outputFile ? 
+        `Generated visualization: ${log.outputFile.split('/').pop()}` :
+        log.status === 'error' ? 'Output generation failed' :
+        'Generating visualization file...',
+      icon: <Image className="h-4 w-4" />,
+      status: log.outputFile ? 'completed' : 
+              log.status === 'error' ? 'error' : 
+              log.status === 'processing' ? 'processing' : 'pending',
+      timestamp: log.completedAt || log.createdAt
+    }
+  ];
+  
+  return steps;
+};
+
+const getStepIcon = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    case 'processing':
+      return <Clock className="h-4 w-4 text-blue-500 animate-pulse" />;
+    case 'error':
+      return <AlertCircle className="h-4 w-4 text-red-500" />;
+    default:
+      return <div className="h-4 w-4 rounded-full border-2 border-gray-300" />;
+  }
+};
+
+const getStepColor = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return 'text-green-600 border-green-300 bg-green-50';
+    case 'processing':
+      return 'text-blue-600 border-blue-300 bg-blue-50';
+    case 'error':
+      return 'text-red-600 border-red-300 bg-red-50';
+    default:
+      return 'text-gray-400 border-gray-300 bg-gray-50';
+  }
 };
 
 export default function ProcessingQueue({ emailLogs }: ProcessingQueueProps) {
@@ -114,6 +214,36 @@ export default function ProcessingQueue({ emailLogs }: ProcessingQueueProps) {
                   </div>
                 )}
                 
+                {/* Processing Timeline */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <h4 className="text-sm font-medium mb-3 text-foreground">Processing Timeline</h4>
+                  <div className="space-y-3">
+                    {getProcessingSteps(log).map((step, index) => (
+                      <div key={step.id} className="flex items-start space-x-3">
+                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${getStepColor(step.status)}`}>
+                          {getStepIcon(step.status)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-foreground">{step.title}</p>
+                            <span className="text-xs text-muted-foreground">
+                              {formatTimestamp(step.timestamp)}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {step.description}
+                          </p>
+                          {step.status === 'processing' && (
+                            <div className="mt-2">
+                              <Progress value={60} className="h-1" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {log.errorMessage && (
                   <div className="mt-3 pt-3 border-t border-border">
                     <div className="bg-destructive/10 rounded-md p-3">

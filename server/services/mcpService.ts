@@ -152,9 +152,11 @@ export class MCPService {
         };
       }
 
-      // Create timestamped output directory
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '').slice(0, -5);
-      const outputDir = path.join(this.outputPath, timestamp);
+      // Create timestamped output directory with proper date formatting
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/[:.]/g, '').replace(/T/, '_').slice(0, 15); // YYYY-MM-DD_HHMMSS
+      const friendlyTimestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
+      const outputDir = path.join(this.outputPath, friendlyTimestamp);
       fs.mkdirSync(outputDir, { recursive: true });
 
       // Generate output file path

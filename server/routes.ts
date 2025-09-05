@@ -237,6 +237,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Process direct query endpoint
+  // Check clarification endpoint for conversational AI
+  app.post("/api/check-clarification", async (req, res) => {
+    try {
+      const { query } = req.body;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: "Query is required" });
+      }
+
+      const clarificationResult = await llmService.checkClarification(query);
+      res.json(clarificationResult);
+    } catch (error) {
+      console.error('Clarification check error:', error);
+      res.status(500).json({ 
+        needsClarification: true,
+        confidence: 0.1,
+        suggestions: [
+          "Gamma ray analysis with production_well_02.las",
+          "Depth visualization with sample_well_01.las"
+        ],
+        message: "I'm having trouble understanding your request. Could you try rephrasing it?"
+      });
+    }
+  });
+
   app.post("/api/process-query", async (req, res) => {
     try {
       const { query } = req.body;

@@ -16,10 +16,10 @@ export class LLMService {
   private apiKey?: string;
 
   constructor() {
-    // No default values - must be configured by user
-    this.endpoint = '';
-    this.model = '';
-    this.provider = '';
+    // Set default Ollama configuration from environment or fallback
+    this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
+    this.model = 'llama3.2:1b';
+    this.provider = 'ollama';
     this.apiKey = undefined;
   }
 
@@ -40,18 +40,15 @@ export class LLMService {
   }
 
   async analyzeEmailContent(emailBody: string): Promise<LLMResponse> {
+    // Use the default configuration for Ollama
+    // Override with stored config if available
     await this.loadConfig();
     
-    // Validate configuration before attempting to use it
-    if (!this.endpoint || !this.provider || !this.model) {
-      throw new Error('LLM not configured. Please configure provider, model, and endpoint in the LLM Integration panel.');
-    }
-    
-    // Validate endpoint URL format
-    try {
-      new URL(this.endpoint);
-    } catch (error) {
-      throw new Error(`Invalid LLM endpoint URL: ${this.endpoint}. Please provide a valid URL like http://localhost:11434 or https://api.openai.com`);
+    // Use defaults if not configured
+    if (!this.endpoint) {
+      this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
+      this.model = 'llama3.2:1b';
+      this.provider = 'ollama';
     }
     
     const prompt = `Analyze this email request for LAS (Log ASCII Standard) file processing:
@@ -131,6 +128,109 @@ Respond only with valid JSON:`;
     } catch (error) {
       console.error('LLM service error:', error);
       throw new Error(`LLM service unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async checkClarification(query: string): Promise<{ needsClarification: boolean; confidence: number; suggestions: string[]; message: string }> {
+    // Use defaults if not configured
+    if (!this.endpoint) {
+      this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
+      this.model = 'llama3.2:1b';
+      this.provider = 'ollama';
+    }
+
+    const prompt = `Analyze this LAS analysis query and determine if it needs clarification:
+
+Query: "${query}"
+
+Available options:
+- "gamma ray analysis" using gamma_ray_analyzer.py with production_well_02.las
+- "depth visualization" using depth_visualization.py with sample_well_01.las
+
+Respond with JSON containing:
+- needsClarification: true if query is unclear or ambiguous
+- confidence: 0.0-1.0 confidence in understanding the request
+- suggestions: array of clarification options if needed
+- message: helpful response message
+
+Example responses:
+{
+  "needsClarification": false,
+  "confidence": 0.9,
+  "suggestions": [],
+  "message": "I understand you want gamma ray analysis. Let me process that."
+}
+
+{
+  "needsClarification": true,
+  "confidence": 0.3,
+  "suggestions": ["Gamma ray analysis with production data", "Depth visualization with sample data", "Tell me more about your analysis goals"],
+  "message": "I'm not sure what type of analysis you need. Could you clarify?"
+}
+
+Respond only with valid JSON:`;
+
+    try {
+      const response = await axios.post(`${this.endpoint}/api/generate`, {
+        model: this.model,
+        prompt,
+        stream: false,
+        format: 'json',
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000,
+      });
+
+      const responseText = response.data.response;
+      
+      try {
+        const parsed = JSON.parse(responseText);
+        return {
+          needsClarification: parsed.needsClarification || false,
+          confidence: parsed.confidence || 0.5,
+          suggestions: parsed.suggestions || [],
+          message: parsed.message || 'Let me help you with your analysis request.'
+        };
+      } catch (parseError) {
+        console.error('Failed to parse clarification response as JSON:', responseText);
+        // Fallback logic
+        const hasGamma = query.toLowerCase().includes('gamma');
+        const hasDepth = query.toLowerCase().includes('depth') || query.toLowerCase().includes('plot');
+        const hasSpecific = hasGamma || hasDepth;
+        
+        return {
+          needsClarification: !hasSpecific,
+          confidence: hasSpecific ? 0.8 : 0.3,
+          suggestions: hasSpecific ? [] : [
+            "Gamma ray analysis with production_well_02.las",
+            "Depth visualization with sample_well_01.las",
+            "Tell me more about your specific analysis needs"
+          ],
+          message: hasSpecific ? 
+            "I understand your request. Let me process that for you." :
+            "I'm not quite sure what type of analysis you need. Could you clarify?"
+        };
+      }
+    } catch (error) {
+      console.error('LLM clarification error:', error);
+      // Simple fallback
+      const hasGamma = query.toLowerCase().includes('gamma');
+      const hasDepth = query.toLowerCase().includes('depth') || query.toLowerCase().includes('plot');
+      const hasSpecific = hasGamma || hasDepth;
+      
+      return {
+        needsClarification: !hasSpecific,
+        confidence: hasSpecific ? 0.7 : 0.2,
+        suggestions: hasSpecific ? [] : [
+          "Gamma ray analysis with production_well_02.las",
+          "Depth visualization with sample_well_01.las"
+        ],
+        message: hasSpecific ? 
+          "I understand your request. Let me process that for you." :
+          "I'm not quite sure what type of analysis you need. Could you clarify?"
+      };
     }
   }
 
