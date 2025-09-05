@@ -117,7 +117,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Extract LLM config from request if provided
       const { llmConfig } = req.body;
-      console.log('Test connections request - LLM config received:', llmConfig);
       
       const [emailTest, llmTest, mcpTest] = await Promise.all([
         emailService.testConnection(),
