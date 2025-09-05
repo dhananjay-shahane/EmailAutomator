@@ -4,9 +4,6 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import StatusCard from "@/components/StatusCard";
 import ActivityLog from "@/components/ActivityLog";
-import EmailConfig from "@/components/EmailConfig";
-import LLMPanel from "@/components/LLMPanel";
-import MCPPanel from "@/components/MCPPanel";
 import ProcessingQueue from "@/components/ProcessingQueue";
 import DirectQueryPanel from "@/components/DirectQueryPanel";
 import OutputViewer from "@/components/OutputViewer";
@@ -231,14 +228,8 @@ export default function Dashboard() {
             <OutputViewer />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             <ActivityLog emailLogs={emailLogs} />
-            <EmailConfig />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <LLMPanel status={llmStatus} />
-            <MCPPanel status={mcpStatus} />
           </div>
 
           <ProcessingQueue emailLogs={emailLogs} />

@@ -27,6 +27,7 @@ export default function OutputViewer() {
   const [selectedImage, setSelectedImage] = useState<OutputFile | null>(null);
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const [previousFileCount, setPreviousFileCount] = useState<{[key: string]: number}>({});
 
   const { data: outputFiles, isLoading, refetch } = useQuery<OutputFolder[]>({
     queryKey: ["/api/output-files"],
@@ -62,6 +63,22 @@ export default function OutputViewer() {
   const openImageViewer = (file: OutputFile) => {
     setSelectedImage(file);
     setIsImageDialogOpen(true);
+  };
+
+  // Track new files for blink indicator
+  useEffect(() => {
+    if (outputFiles) {
+      const newCounts: {[key: string]: number} = {};
+      outputFiles.forEach(folder => {
+        newCounts[folder.name] = folder.files.length;
+      });
+      setPreviousFileCount(newCounts);
+    }
+  }, [outputFiles]);
+
+  const hasNewFiles = (folderName: string, currentCount: number) => {
+    const prevCount = previousFileCount[folderName] || 0;
+    return currentCount > prevCount;
   };
 
   return (
@@ -114,16 +131,23 @@ export default function OutputViewer() {
                     <Folder className="w-12 h-12 text-blue-500 group-hover:text-blue-600 transition-colors" />
                     <Badge 
                       variant="secondary" 
-                      className="absolute -top-1 -right-1 text-xs px-1 py-0 min-w-0 h-5 rounded-full"
+                      className={`absolute -top-1 -right-1 text-xs px-1 py-0 min-w-0 h-5 rounded-full ${
+                        hasNewFiles(folder.name, folder.files.length) 
+                          ? 'bg-red-500 text-white animate-pulse' 
+                          : ''
+                      }`}
                     >
                       {folder.files.length}
                     </Badge>
+                    {hasNewFiles(folder.name, folder.files.length) && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
+                    )}
                   </div>
                   <p className="text-sm font-medium text-center line-clamp-2 leading-tight">
                     {folder.name}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(folder.createdAt), 'MMM dd')}
+                    {folder.createdAt ? format(new Date(folder.createdAt), 'MMM dd') : 'Unknown'}
                   </p>
                 </div>
               ))}
@@ -140,7 +164,7 @@ export default function OutputViewer() {
                 {selectedFolder?.name}
               </DialogTitle>
               <DialogDescription>
-                Created on {selectedFolder && format(new Date(selectedFolder.createdAt), 'MMMM dd, yyyy')} • {selectedFolder?.files.length} files
+                Created on {selectedFolder && selectedFolder.createdAt ? format(new Date(selectedFolder.createdAt), 'MMMM dd, yyyy') : 'Unknown date'} • {selectedFolder?.files.length} files
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-[60vh]">
@@ -199,16 +223,7 @@ export default function OutputViewer() {
         <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
           <DialogContent className="max-w-6xl max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle className="flex items-center justify-between">
-                <span>{selectedImage?.name}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsImageDialogOpen(false)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </DialogTitle>
+              <DialogTitle>{selectedImage?.name}</DialogTitle>
               <DialogDescription>
                 {selectedImage && (
                   <div className="flex items-center gap-4 text-sm">
@@ -218,13 +233,17 @@ export default function OutputViewer() {
                 )}
               </DialogDescription>
             </DialogHeader>
-            <div className="overflow-auto rounded-lg bg-secondary/20 p-4">
+            <div className="overflow-auto rounded-lg bg-secondary/20 p-4 max-h-[60vh]">
               {selectedImage && (
                 <img
                   src={getImageUrl(selectedImage.path)}
                   alt={selectedImage.name}
                   className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
                   data-testid={`image-${selectedImage.name}`}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkgOUgxNVYxNUg5VjlaIiBzdHJva2U9IiM5OTk5OTkiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K';
+                  }}
                 />
               )}
             </div>

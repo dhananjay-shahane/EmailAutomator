@@ -1,23 +1,20 @@
 import { Mail, BarChart3, MessageSquare, Server, FileCode, History, Settings } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
 interface NavItem {
   name: string;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
-  current?: boolean;
 }
 
 const navigation: NavItem[] = [
-  { name: 'Dashboard', icon: BarChart3, href: '#', current: true },
-  { name: 'Email Monitor', icon: Mail, href: '#' },
-  { name: 'LLM Integration', icon: MessageSquare, href: '#' },
-  { name: 'MCP Server', icon: Server, href: '#' },
-  { name: 'LAS Files', icon: FileCode, href: '#' },
-  { name: 'Processing Logs', icon: History, href: '#' },
-  { name: 'Settings', icon: Settings, href: '#' },
+  { name: 'Dashboard', icon: BarChart3, href: '/' },
+  { name: 'Settings', icon: Settings, href: '/settings' },
 ];
 
 export default function Sidebar() {
+  const [location] = useLocation();
+
   return (
     <div className="sidebar w-64 p-6 border-r border-border flex flex-col">
       <div className="flex items-center space-x-3 mb-8">
@@ -33,12 +30,13 @@ export default function Sidebar() {
       <nav className="space-y-2 flex-1">
         {navigation.map((item) => {
           const Icon = item.icon;
+          const isActive = location === item.href;
           return (
-            <a
+            <Link
               key={item.name}
               href={item.href}
               className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
-                item.current
+                isActive
                   ? 'bg-accent text-accent-foreground font-medium'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               }`}
@@ -46,7 +44,7 @@ export default function Sidebar() {
             >
               <Icon className="w-4 h-4" />
               <span>{item.name}</span>
-            </a>
+            </Link>
           );
         })}
       </nav>
