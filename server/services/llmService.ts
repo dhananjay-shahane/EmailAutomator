@@ -27,17 +27,34 @@ export class LLMService {
   setConfig(config: { provider: string; model: string; endpoint?: string; apiKey?: string }) {
     this.provider = config.provider;
     this.model = config.model;
-    this.endpoint = config.endpoint ? config.endpoint.replace(/\/$/, '') : '';
+    
+    // Set appropriate endpoint based on provider if not provided
+    if (config.endpoint && config.endpoint.trim()) {
+      this.endpoint = config.endpoint.replace(/\/$/, '');
+    } else {
+      // Use default endpoint based on provider
+      if (config.provider === 'huggingface') {
+        this.endpoint = 'https://api-inference.huggingface.co';
+      } else {
+        this.endpoint = '';
+      }
+    }
+    
     this.apiKey = config.apiKey;
   }
 
   // Use default configuration if not provided
   private useDefaults() {
     if (!this.endpoint || !this.provider || !this.model) {
-      // Only use defaults if not configured via environment or frontend
-      this.endpoint = process.env.LLM_ENDPOINT || '';
-      this.model = process.env.LLM_MODEL || '';
+      // Set proper defaults based on provider
       this.provider = process.env.LLM_PROVIDER || 'huggingface';
+      if (this.provider === 'huggingface') {
+        this.endpoint = process.env.LLM_ENDPOINT || 'https://api-inference.huggingface.co';
+        this.model = process.env.LLM_MODEL || 'microsoft/DialoGPT-large';
+      } else {
+        this.endpoint = process.env.LLM_ENDPOINT || '';
+        this.model = process.env.LLM_MODEL || '';
+      }
       this.apiKey = process.env.HUGGINGFACE_API_KEY || process.env.LLM_API_KEY;
     }
   }
@@ -129,21 +146,43 @@ Respond only with valid JSON:`;
       let response;
       
       if (this.provider === 'huggingface') {
-        // Hugging Face API format
-        response = await axios.post(`${this.endpoint}/models/${this.model}`, {
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 500,
-            temperature: 0.7,
-            return_full_text: false
-          }
-        }, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`,
-          },
-          timeout: 45000,
-        });
+        // Check if this is a GPT-OSS model (uses different API)
+        if (this.model.includes('gpt-oss')) {
+          // Use OpenAI-compatible API format for GPT-OSS models
+          const routerEndpoint = 'https://router.huggingface.co/v1';
+          const fullModelName = this.model.includes(':') ? this.model : `${this.model}:cerebras`;
+          
+          response = await axios.post(`${routerEndpoint}/chat/completions`, {
+            model: fullModelName,
+            messages: [
+              { role: "user", content: prompt }
+            ],
+            max_tokens: 500,
+            temperature: 0.7
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.apiKey}`,
+            },
+            timeout: 45000,
+          });
+        } else {
+          // Regular Hugging Face inference API format
+          response = await axios.post(`${this.endpoint}/models/${this.model}`, {
+            inputs: prompt,
+            parameters: {
+              max_new_tokens: 500,
+              temperature: 0.7,
+              return_full_text: false
+            }
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.apiKey}`,
+            },
+            timeout: 45000,
+          });
+        }
       } else {
         // Ollama API format (fallback)
         response = await axios.post(`${this.endpoint}/api/generate`, {
@@ -159,9 +198,19 @@ Respond only with valid JSON:`;
         });
       }
 
-      const responseText = this.provider === 'huggingface' ? 
-        (Array.isArray(response.data) ? response.data[0]?.generated_text : response.data.generated_text) : 
-        response.data.response;
+      let responseText;
+      if (this.provider === 'huggingface') {
+        if (this.model.includes('gpt-oss')) {
+          // GPT-OSS models use OpenAI format
+          responseText = response.data.choices[0]?.message?.content;
+        } else {
+          // Regular Hugging Face models
+          responseText = Array.isArray(response.data) ? response.data[0]?.generated_text : response.data.generated_text;
+        }
+      } else {
+        // Ollama format
+        responseText = response.data.response;
+      }
       
       try {
         const parsed = JSON.parse(responseText);
@@ -251,20 +300,41 @@ Respond only with valid JSON:`;
       let response;
       
       if (this.provider === 'huggingface') {
-        response = await axios.post(`${this.endpoint}/models/${this.model}`, {
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 200,
-            temperature: 0.3,
-            return_full_text: false
-          }
-        }, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`,
-          },
-          timeout: 30000,
-        });
+        if (this.model.includes('gpt-oss')) {
+          // Use OpenAI-compatible API format for GPT-OSS models
+          const routerEndpoint = 'https://router.huggingface.co/v1';
+          const fullModelName = this.model.includes(':') ? this.model : `${this.model}:cerebras`;
+          
+          response = await axios.post(`${routerEndpoint}/chat/completions`, {
+            model: fullModelName,
+            messages: [
+              { role: "user", content: prompt }
+            ],
+            max_tokens: 200,
+            temperature: 0.3
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.apiKey}`,
+            },
+            timeout: 30000,
+          });
+        } else {
+          response = await axios.post(`${this.endpoint}/models/${this.model}`, {
+            inputs: prompt,
+            parameters: {
+              max_new_tokens: 200,
+              temperature: 0.3,
+              return_full_text: false
+            }
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.apiKey}`,
+            },
+            timeout: 30000,
+          });
+        }
       } else {
         response = await axios.post(`${this.endpoint}/api/generate`, {
           model: this.model,
@@ -279,9 +349,19 @@ Respond only with valid JSON:`;
         });
       }
 
-      const responseText = this.provider === 'huggingface' ? 
-        (Array.isArray(response.data) ? response.data[0]?.generated_text : response.data.generated_text) : 
-        response.data.response;
+      let responseText;
+      if (this.provider === 'huggingface') {
+        if (this.model.includes('gpt-oss')) {
+          // GPT-OSS models use OpenAI format
+          responseText = response.data.choices[0]?.message?.content;
+        } else {
+          // Regular Hugging Face models
+          responseText = Array.isArray(response.data) ? response.data[0]?.generated_text : response.data.generated_text;
+        }
+      } else {
+        // Ollama format
+        responseText = response.data.response;
+      }
       
       try {
         const parsed = JSON.parse(responseText);
@@ -309,11 +389,21 @@ Respond only with valid JSON:`;
       this.useDefaults();
     }
     
+    console.log(`Testing LLM connection - Provider: ${this.provider}, Model: ${this.model}, Endpoint: ${this.endpoint}`);
+    
     if (!this.endpoint || !this.provider || !this.model) {
       return {
         success: false,
         responseTime: 0,
         error: 'LLM not configured. Please configure provider, model, and endpoint in settings.'
+      };
+    }
+    
+    if (this.provider === 'huggingface' && !this.apiKey) {
+      return {
+        success: false,
+        responseTime: 0,
+        error: 'Hugging Face API key is required for authentication.'
       };
     }
     
@@ -323,20 +413,41 @@ Respond only with valid JSON:`;
       let response;
       
       if (this.provider === 'huggingface') {
-        response = await axios.post(`${this.endpoint}/models/${this.model}`, {
-          inputs: 'Test connection. Respond with: OK',
-          parameters: {
-            max_new_tokens: 10,
-            temperature: 0.1,
-            return_full_text: false
-          }
-        }, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`,
-          },
-          timeout: 15000,
-        });
+        if (this.model.includes('gpt-oss')) {
+          // Use OpenAI-compatible API format for GPT-OSS models
+          const routerEndpoint = 'https://router.huggingface.co/v1';
+          const fullModelName = this.model.includes(':') ? this.model : `${this.model}:cerebras`;
+          
+          response = await axios.post(`${routerEndpoint}/chat/completions`, {
+            model: fullModelName,
+            messages: [
+              { role: "user", content: "Test connection. Respond with: OK" }
+            ],
+            max_tokens: 10,
+            temperature: 0.1
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.apiKey}`,
+            },
+            timeout: 15000,
+          });
+        } else {
+          response = await axios.post(`${this.endpoint}/models/${this.model}`, {
+            inputs: 'Test connection. Respond with: OK',
+            parameters: {
+              max_new_tokens: 10,
+              temperature: 0.1,
+              return_full_text: false
+            }
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.apiKey}`,
+            },
+            timeout: 15000,
+          });
+        }
       } else {
         response = await axios.post(`${this.endpoint}/api/generate`, {
           model: this.model,
