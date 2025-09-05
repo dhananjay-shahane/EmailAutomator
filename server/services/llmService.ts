@@ -96,22 +96,29 @@ STRICT mapping rules (FOLLOW EXACTLY):
 - ANY mention of "porosity_calculator.py" → porosity_calculator.py + porosity_calculator + offshore_well_03.las
 - ANY mention of "lithology_classifier.py" → lithology_classifier.py + lithology_classifier + development_well_05.las
 
-Keywords mapping (when no script specified):
-- "plot", "depth", "visualization", "chart" → depth_visualization.py + depth_plotter + sample_well_01.las
-- "gamma", "gamma ray", "radioactivity" → gamma_ray_analyzer.py + gamma_analyzer + production_well_02.las
-- "resistivity", "resistance", "formation evaluation" → resistivity_analyzer.py + resistivity_analyzer + exploration_well_04.las
-- "porosity", "neutron", "density", "pore space" → porosity_calculator.py + porosity_calculator + offshore_well_03.las
-- "lithology", "rock type", "classification", "formation" → lithology_classifier.py + lithology_classifier + development_well_05.las
+Keywords mapping (when no script specified) - USE FIRST MATCH FOUND:
+Priority order (most specific first):
+1. "gamma", "gamma ray", "radioactivity" → gamma_ray_analyzer.py + gamma_analyzer + production_well_02.las
+2. "resistivity", "resistance", "formation evaluation" → resistivity_analyzer.py + resistivity_analyzer + exploration_well_04.las
+3. "porosity", "neutron", "density", "pore space" → porosity_calculator.py + porosity_calculator + offshore_well_03.las
+4. "lithology", "rock type", "classification", "formation" → lithology_classifier.py + lithology_classifier + development_well_05.las
+5. "plot", "depth", "visualization", "chart" → depth_visualization.py + depth_plotter + sample_well_01.las
+
+CRITICAL: If ANY of the first 4 keywords are found, DO NOT use depth_visualization.py!
+Examples:
+- "create gamma ray plot" = GAMMA RAY → gamma_ray_analyzer.py (NOT depth_visualization.py)
+- "resistivity visualization" = RESISTIVITY → resistivity_analyzer.py (NOT depth_visualization.py)
+- "porosity chart" = POROSITY → porosity_calculator.py (NOT depth_visualization.py)
 
 CRITICAL: If user specifies a script name OR LAS file, USE EXACTLY what they specify!
 
 Example responses:
 {
-  "script": "depth_visualization.py",
-  "lasFile": "sample_well_01.las",
-  "tool": "depth_plotter",
+  "script": "gamma_ray_analyzer.py",
+  "lasFile": "production_well_02.las",
+  "tool": "gamma_analyzer",
   "confidence": 0.95,
-  "reasoning": "Request asks for plot/visualization, using sample well data"
+  "reasoning": "Request mentions gamma ray, using gamma ray analysis with production well data"
 }
 
 {
@@ -120,6 +127,14 @@ Example responses:
   "tool": "resistivity_analyzer",
   "confidence": 0.90,
   "reasoning": "Request asks for resistivity analysis, using exploration data with deep resistivity logs"
+}
+
+{
+  "script": "depth_visualization.py",
+  "lasFile": "sample_well_01.las",
+  "tool": "depth_plotter",
+  "confidence": 0.85,
+  "reasoning": "Request asks for basic plotting/visualization only, using sample well data"
 }
 
 Respond only with valid JSON:`;
