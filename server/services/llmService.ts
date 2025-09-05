@@ -420,12 +420,21 @@ Respond only with valid JSON:`;
         };
       }
       
+      // Check for valid model names
+      if (this.model === 'custom-model' || this.model === '') {
+        return {
+          success: false,
+          responseTime: 0,
+          error: 'Please enter a valid model name. For GPT-OSS use: openai/gpt-oss-120b or gpt-oss-120b'
+        };
+      }
+      
       // GPT-OSS models don't need endpoint configured since they use router
       if (!this.model.includes('gpt-oss') && !this.endpoint) {
         return {
           success: false,
           responseTime: 0,
-          error: 'Please configure the endpoint URL in settings or use a GPT-OSS model.'
+          error: 'Please configure the endpoint URL in settings or use a GPT-OSS model like openai/gpt-oss-120b'
         };
       }
     } else {
@@ -501,10 +510,28 @@ Respond only with valid JSON:`;
       };
     } catch (error) {
       const responseTime = Date.now() - startTime;
+      
+      // Provide more detailed error messages
+      let errorMessage = 'LLM service unavailable';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('404')) {
+          errorMessage = `Model not found. Please check if '${this.model}' is a valid Hugging Face model name.`;
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+          errorMessage = 'Authentication failed. Please check your Hugging Face API key.';
+        } else if (error.message.includes('ENOTFOUND') || error.message.includes('timeout')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      console.error('LLM test connection error:', errorMessage);
+      
       return {
         success: false,
         responseTime: responseTime / 1000,
-        error: error instanceof Error ? error.message : 'LLM service unavailable',
+        error: errorMessage,
       };
     }
   }
