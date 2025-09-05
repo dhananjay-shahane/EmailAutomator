@@ -41,6 +41,19 @@ export class LLMService {
 
   async analyzeEmailContent(emailBody: string): Promise<LLMResponse> {
     await this.loadConfig();
+    
+    // Validate configuration before attempting to use it
+    if (!this.endpoint || !this.provider || !this.model) {
+      throw new Error('LLM not configured. Please configure provider, model, and endpoint in the LLM Integration panel.');
+    }
+    
+    // Validate endpoint URL format
+    try {
+      new URL(this.endpoint);
+    } catch (error) {
+      throw new Error(`Invalid LLM endpoint URL: ${this.endpoint}. Please provide a valid URL like http://localhost:11434 or https://api.openai.com`);
+    }
+    
     const prompt = `Analyze this email request for LAS (Log ASCII Standard) file processing:
 
 Email content: "${emailBody}"

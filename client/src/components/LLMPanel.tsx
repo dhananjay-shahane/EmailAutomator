@@ -234,6 +234,18 @@ export default function LLMPanel({ status }: LLMPanelProps) {
       </div>
 
       <div className="p-6 space-y-6">
+        {/* Setup Instructions */}
+        {!isConnected && (
+          <div className="bg-muted/50 rounded-lg p-4 border border-border">
+            <h4 className="text-sm font-medium text-foreground mb-2">Setup Instructions</h4>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p><strong>For Ollama:</strong> Install Ollama locally and run <code className="bg-muted px-1 rounded">ollama serve</code></p>
+              <p><strong>For API Services:</strong> Get an API key from your provider (OpenAI, Anthropic, etc.)</p>
+              <p><strong>Endpoint Examples:</strong> http://localhost:11434 (Ollama) or https://api.openai.com (OpenAI)</p>
+            </div>
+          </div>
+        )}
+
         {/* LLM Provider Selection */}
         <div className="space-y-2">
           <Label htmlFor="provider" className="text-sm font-medium text-foreground">LLM Provider</Label>
