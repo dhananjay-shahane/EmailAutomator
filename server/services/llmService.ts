@@ -1,4 +1,4 @@
-import axios from 'axios';
+ import axios from 'axios';
 
 export interface LLMResponse {
   script: string;
@@ -57,33 +57,62 @@ IMPORTANT: You can ONLY use these EXACT available resources:
 SCRIPTS (choose exactly one):
 - "depth_visualization.py" → for depth plots, visualizations, general plotting
 - "gamma_ray_analyzer.py" → for gamma ray analysis, statistical analysis
+- "resistivity_analyzer.py" → for resistivity analysis and formation evaluation
+- "porosity_calculator.py" → for porosity calculations from neutron/density logs
+- "lithology_classifier.py" → for rock type classification and lithology analysis
 
 LAS FILES (choose exactly one):
 - "sample_well_01.las" → for basic well data, depth analysis
 - "production_well_02.las" → for production data, gamma ray analysis
+- "offshore_well_03.las" → for offshore drilling data, comprehensive logs
+- "exploration_well_04.las" → for exploration data, deep resistivity analysis
+- "development_well_05.las" → for development data, advanced logging suite
 
-TOOLS (must match script):
-- "depth_plotter" → use with depth_visualization.py
-- "gamma_analyzer" → use with gamma_ray_analyzer.py
+TOOLS (must match script EXACTLY):
+- "depth_plotter" → ONLY use with depth_visualization.py
+- "gamma_analyzer" → ONLY use with gamma_ray_analyzer.py
+- "resistivity_analyzer" → ONLY use with resistivity_analyzer.py
+- "porosity_calculator" → ONLY use with porosity_calculator.py
+- "lithology_classifier" → ONLY use with lithology_classifier.py
 
 You must respond with a JSON object containing:
-- script: Choose exactly "depth_visualization.py" OR "gamma_ray_analyzer.py"
-- lasFile: Choose exactly "sample_well_01.las" OR "production_well_02.las" 
-- tool: Choose exactly "depth_plotter" OR "gamma_analyzer"
+- script: Choose exactly one from: "depth_visualization.py", "gamma_ray_analyzer.py", "resistivity_analyzer.py", "porosity_calculator.py", "lithology_classifier.py"
+- lasFile: Choose exactly one from: "sample_well_01.las", "production_well_02.las", "offshore_well_03.las", "exploration_well_04.las", "development_well_05.las"
+- tool: Choose exactly one from: "depth_plotter", "gamma_analyzer", "resistivity_analyzer", "porosity_calculator", "lithology_classifier"
 - confidence: A number between 0-1 indicating confidence in the analysis
 - reasoning: A brief explanation of why these choices were made
 
-Natural language mapping rules:
-- "plot", "depth", "visualization", "chart" → depth_visualization.py + depth_plotter + sample_well_01.las
-- "gamma", "analysis", "statistical", "analyzer" → gamma_ray_analyzer.py + gamma_analyzer + production_well_02.las
+STRICT mapping rules (FOLLOW EXACTLY):
+- ANY mention of "depth_visualization.py" → depth_visualization.py + depth_plotter + sample_well_01.las
+- ANY mention of "gamma_ray_analyzer.py" → gamma_ray_analyzer.py + gamma_analyzer + production_well_02.las
+- ANY mention of "resistivity_analyzer.py" → resistivity_analyzer.py + resistivity_analyzer + exploration_well_04.las
+- ANY mention of "porosity_calculator.py" → porosity_calculator.py + porosity_calculator + offshore_well_03.las
+- ANY mention of "lithology_classifier.py" → lithology_classifier.py + lithology_classifier + development_well_05.las
 
-Example response:
+Keywords mapping (when no script specified):
+- "plot", "depth", "visualization", "chart" → depth_visualization.py + depth_plotter + sample_well_01.las
+- "gamma", "gamma ray", "radioactivity" → gamma_ray_analyzer.py + gamma_analyzer + production_well_02.las
+- "resistivity", "resistance", "formation evaluation" → resistivity_analyzer.py + resistivity_analyzer + exploration_well_04.las
+- "porosity", "neutron", "density", "pore space" → porosity_calculator.py + porosity_calculator + offshore_well_03.las
+- "lithology", "rock type", "classification", "formation" → lithology_classifier.py + lithology_classifier + development_well_05.las
+
+CRITICAL: If user specifies a script name OR LAS file, USE EXACTLY what they specify!
+
+Example responses:
 {
   "script": "depth_visualization.py",
   "lasFile": "sample_well_01.las",
   "tool": "depth_plotter",
   "confidence": 0.95,
   "reasoning": "Request asks for plot/visualization, using sample well data"
+}
+
+{
+  "script": "resistivity_analyzer.py",
+  "lasFile": "exploration_well_04.las",
+  "tool": "resistivity_analyzer",
+  "confidence": 0.90,
+  "reasoning": "Request asks for resistivity analysis, using exploration data with deep resistivity logs"
 }
 
 Respond only with valid JSON:`;
@@ -141,8 +170,11 @@ Respond only with valid JSON:`;
 Query: "${query}"
 
 Available options:
-- "gamma ray analysis" using gamma_ray_analyzer.py with production_well_02.las
 - "depth visualization" using depth_visualization.py with sample_well_01.las
+- "gamma ray analysis" using gamma_ray_analyzer.py with production_well_02.las
+- "resistivity analysis" using resistivity_analyzer.py with exploration_well_04.las
+- "porosity calculation" using porosity_calculator.py with offshore_well_03.las
+- "lithology classification" using lithology_classifier.py with development_well_05.las
 
 Respond with JSON containing:
 - needsClarification: true if query is unclear or ambiguous
@@ -161,7 +193,13 @@ Example responses:
 {
   "needsClarification": true,
   "confidence": 0.3,
-  "suggestions": ["Gamma ray analysis with production data", "Depth visualization with sample data", "Tell me more about your analysis goals"],
+  "suggestions": [
+    "Depth visualization with sample_well_01.las", 
+    "Gamma ray analysis with production_well_02.las",
+    "Resistivity analysis with exploration_well_04.las",
+    "Porosity calculation with offshore_well_03.las",
+    "Lithology classification with development_well_05.las"
+  ],
   "message": "I'm not sure what type of analysis you need. Could you clarify?"
 }
 
