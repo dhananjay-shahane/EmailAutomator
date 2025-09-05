@@ -73,9 +73,9 @@ const MISTRAL_MODELS = [
 
 export default function LLMPanel({ status }: LLMPanelProps) {
   const { toast } = useToast();
-  const [provider, setProvider] = useState('');
-  const [selectedModel, setSelectedModel] = useState('');
-  const [endpoint, setEndpoint] = useState('');
+  const [provider, setProvider] = useState('ollama');
+  const [selectedModel, setSelectedModel] = useState('llama3.2:1b');
+  const [endpoint, setEndpoint] = useState('http://localhost:11434');
   const [apiKey, setApiKey] = useState('');
 
   const isConnected = status?.status === 'online';
@@ -87,9 +87,15 @@ export default function LLMPanel({ status }: LLMPanelProps) {
 
   // Load current configuration when component mounts or status updates
   useEffect(() => {
-    setProvider(currentProvider);
-    setSelectedModel(currentModel);
-    setEndpoint(currentEndpoint);
+    if (currentProvider) {
+      setProvider(currentProvider);
+    }
+    if (currentModel) {
+      setSelectedModel(currentModel);
+    }
+    if (currentEndpoint) {
+      setEndpoint(currentEndpoint);
+    }
   }, [currentProvider, currentModel, currentEndpoint]);
 
   const testConnectionMutation = useMutation({
@@ -213,7 +219,7 @@ export default function LLMPanel({ status }: LLMPanelProps) {
   };
 
   const requiresApiKey = () => {
-    return provider !== 'ollama' && provider !== 'local' && provider !== '';
+    return provider && provider !== 'ollama' && provider !== 'local';
   };
 
   const requiresEndpoint = () => {
