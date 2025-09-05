@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { TestTubeDiagonal, Save, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
+import { llmConfigStorage, type LLMConfig } from "@/lib/llmConfigStorage";
 
 interface LLMPanelProps {
   status?: {
@@ -77,26 +78,45 @@ export default function LLMPanel({ status }: LLMPanelProps) {
   const [selectedModel, setSelectedModel] = useState('');
   const [endpoint, setEndpoint] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [isConfigured, setIsConfigured] = useState(false);
 
   const isConnected = status?.status === 'online';
-  const currentEndpoint = status?.metadata?.endpoint || '';
-  const currentModel = status?.metadata?.model || '';
-  const currentProvider = status?.metadata?.provider || '';
   const responseTime = status?.metadata?.responseTime || '0';
   const successRate = 94; // This would come from historical data
 
-  // Load current configuration when component mounts or status updates
+  // Load configuration from localStorage when component mounts
   useEffect(() => {
-    setProvider(currentProvider || '');
-    setSelectedModel(currentModel || '');
-    setEndpoint(currentEndpoint || '');
-  }, [currentProvider, currentModel, currentEndpoint]);
+    const savedConfig = llmConfigStorage.get();
+    if (savedConfig) {
+      setProvider(savedConfig.provider);
+      setSelectedModel(savedConfig.model);
+      setEndpoint(savedConfig.endpoint || '');
+      setApiKey(savedConfig.apiKey || '');
+      setIsConfigured(true);
+    } else {
+      // Load default configuration
+      const defaultConfig = llmConfigStorage.getDefault();
+      setProvider(defaultConfig.provider);
+      setSelectedModel(defaultConfig.model);
+      setEndpoint(defaultConfig.endpoint || '');
+      setIsConfigured(false);
+    }
+  }, []);
 
   const testConnectionMutation = useMutation({
     mutationFn: async () => {
+      // Send current configuration for testing
+      const currentConfig = {
+        provider,
+        model: selectedModel,
+        endpoint: requiresEndpoint() ? endpoint : undefined,
+        apiKey: requiresApiKey() ? apiKey : undefined
+      };
+      
       const response = await fetch("/api/test-connections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ llmConfig: currentConfig }),
       });
       if (!response.ok) throw new Error("Failed to test connections");
       return response.json();
@@ -125,25 +145,30 @@ export default function LLMPanel({ status }: LLMPanelProps) {
   });
 
   const saveConfigurationMutation = useMutation({
-    mutationFn: async (config: any) => {
+    mutationFn: async (config: LLMConfig) => {
+      // Save to localStorage directly
+      llmConfigStorage.set(config);
+      
+      // Also send to backend to update system status
       const response = await fetch('/api/llm-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config)
       });
-      if (!response.ok) throw new Error('Failed to save configuration');
+      if (!response.ok) throw new Error('Failed to update system status');
       return response.json();
     },
     onSuccess: () => {
+      setIsConfigured(true);
       toast({
         title: 'Configuration Updated',
-        description: 'LLM configuration has been saved successfully.'
+        description: 'LLM configuration has been saved to local storage.'
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: 'Update Failed',
-        description: 'Failed to save LLM configuration.',
+        description: 'Failed to save LLM configuration: ' + error.message,
         variant: 'destructive'
       });
     }
@@ -235,13 +260,14 @@ export default function LLMPanel({ status }: LLMPanelProps) {
 
       <div className="p-6 space-y-6">
         {/* Setup Instructions */}
-        {!isConnected && (
+        {!isConfigured && (
           <div className="bg-muted/50 rounded-lg p-4 border border-border">
             <h4 className="text-sm font-medium text-foreground mb-2">Setup Instructions</h4>
             <div className="text-xs text-muted-foreground space-y-1">
               <p><strong>For Ollama:</strong> Install Ollama locally and run <code className="bg-muted px-1 rounded">ollama serve</code></p>
               <p><strong>For API Services:</strong> Get an API key from your provider (OpenAI, Anthropic, etc.)</p>
               <p><strong>Endpoint Examples:</strong> http://localhost:11434 (Ollama) or https://api.openai.com (OpenAI)</p>
+              <p><strong>Storage:</strong> Configuration is saved locally in your browser</p>
             </div>
           </div>
         )}
@@ -324,7 +350,17 @@ export default function LLMPanel({ status }: LLMPanelProps) {
         {/* Configuration Status */}
         {provider && (
           <div className="bg-muted rounded-lg p-4 space-y-3">
-            <h4 className="font-medium text-foreground">Current Configuration</h4>
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-foreground">Current Configuration</h4>
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  isConfigured ? 'bg-success/10 text-success' : 'bg-muted-foreground/10 text-muted-foreground'
+                }`}>
+                  {isConfigured ? 'Configured' : 'Not Configured'}
+                </span>
+                <span className="text-xs text-muted-foreground">Stored Locally</span>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Provider:</span>

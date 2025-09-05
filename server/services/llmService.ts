@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { storage } from '../storage.js';
 
 export interface LLMResponse {
   script: string;
@@ -23,32 +22,30 @@ export class LLMService {
     this.apiKey = undefined;
   }
 
-  private async loadConfig() {
-    const config = await storage.getLLMConfig();
-    if (config) {
-      this.provider = config.provider;
-      this.model = config.model;
-      this.endpoint = config.endpoint ? config.endpoint.replace(/\/$/, '') : '';
-      this.apiKey = config.apiKey;
-    } else {
-      // No defaults - user must configure
-      this.provider = '';
-      this.model = '';
-      this.endpoint = '';
+  // Accept configuration from frontend localStorage
+  setConfig(config: { provider: string; model: string; endpoint?: string; apiKey?: string }) {
+    this.provider = config.provider;
+    this.model = config.model;
+    this.endpoint = config.endpoint ? config.endpoint.replace(/\/$/, '') : '';
+    this.apiKey = config.apiKey;
+  }
+
+  // Use default configuration if not provided
+  private useDefaults() {
+    if (!this.endpoint || !this.provider || !this.model) {
+      this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
+      this.model = 'llama3.2:1b';
+      this.provider = 'ollama';
       this.apiKey = undefined;
     }
   }
 
-  async analyzeEmailContent(emailBody: string): Promise<LLMResponse> {
-    // Use the default configuration for Ollama
-    // Override with stored config if available
-    await this.loadConfig();
-    
-    // Use defaults if not configured
-    if (!this.endpoint) {
-      this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
-      this.model = 'llama3.2:1b';
-      this.provider = 'ollama';
+  async analyzeEmailContent(emailBody: string, config?: { provider: string; model: string; endpoint?: string; apiKey?: string }): Promise<LLMResponse> {
+    // Use provided config or defaults
+    if (config) {
+      this.setConfig(config);
+    } else {
+      this.useDefaults();
     }
     
     const prompt = `Analyze this email request for LAS (Log ASCII Standard) file processing:
@@ -131,12 +128,12 @@ Respond only with valid JSON:`;
     }
   }
 
-  async checkClarification(query: string): Promise<{ needsClarification: boolean; confidence: number; suggestions: string[]; message: string }> {
-    // Use defaults if not configured
-    if (!this.endpoint) {
-      this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
-      this.model = 'llama3.2:1b';
-      this.provider = 'ollama';
+  async checkClarification(query: string, config?: { provider: string; model: string; endpoint?: string; apiKey?: string }): Promise<{ needsClarification: boolean; confidence: number; suggestions: string[]; message: string }> {
+    // Use provided config or defaults
+    if (config) {
+      this.setConfig(config);
+    } else {
+      this.useDefaults();
     }
 
     const prompt = `Analyze this LAS analysis query and determine if it needs clarification:
@@ -234,8 +231,13 @@ Respond only with valid JSON:`;
     }
   }
 
-  async testConnection(): Promise<{ success: boolean; responseTime?: number; error?: string }> {
-    await this.loadConfig();
+  async testConnection(config?: { provider: string; model: string; endpoint?: string; apiKey?: string }): Promise<{ success: boolean; responseTime?: number; error?: string }> {
+    // Use provided config or defaults
+    if (config) {
+      this.setConfig(config);
+    } else {
+      this.useDefaults();
+    }
     
     if (!this.endpoint || !this.provider || !this.model) {
       return {

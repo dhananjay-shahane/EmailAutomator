@@ -115,9 +115,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test connections endpoint
   app.post("/api/test-connections", async (req, res) => {
     try {
+      // Extract LLM config from request if provided
+      const { llmConfig } = req.body;
+      
       const [emailTest, llmTest, mcpTest] = await Promise.all([
         emailService.testConnection(),
-        llmService.testConnection(),
+        llmService.testConnection(llmConfig),
         mcpService.testConnection(),
       ]);
 
@@ -133,14 +136,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentLlm = currentLlmStatus.find(s => s.component === 'llm');
       
       // Only update status if not configured, or if it was already offline
-      const shouldUpdateStatus = !currentLlm?.metadata?.configured || currentLlm.status === 'offline';
+      const shouldUpdateStatus = !(currentLlm?.metadata as any)?.configured || currentLlm?.status === 'offline';
       
       if (shouldUpdateStatus) {
         await storage.updateSystemStatus('llm', {
           component: 'llm',
           status: llmTest.success ? 'online' : 'offline',
           metadata: { 
-            ...currentLlm?.metadata,
+            ...(currentLlm?.metadata || {}),
             lastTest: new Date().toISOString(),
             responseTime: llmTest.responseTime,
             error: llmTest.error,
@@ -150,9 +153,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Just update the test metadata, keep the existing status
         await storage.updateSystemStatus('llm', {
           component: 'llm',
-          status: currentLlm.status,
+          status: currentLlm?.status || 'offline',
           metadata: { 
-            ...currentLlm.metadata,
+            ...(currentLlm?.metadata || {}),
             lastTest: new Date().toISOString(),
             responseTime: llmTest.responseTime,
             error: llmTest.error,
@@ -186,9 +189,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update system status with new configuration
+      // Note: Configuration is now stored in frontend localStorage, not backend
       await storage.updateSystemStatus('llm', {
         component: 'llm',
-        status: 'online', // Configuration is complete, mark as online
+        status: 'configured', // Mark as configured (connection test will determine if online)
         metadata: {
           provider,
           model,
@@ -196,33 +200,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hasApiKey: !!apiKey,
           lastConfigUpdate: new Date().toISOString(),
           configured: true,
+          storageLocation: 'localStorage', // Indicate where config is stored
         },
       });
 
-      // Store configuration using storage interface
-      const config = {
-        provider,
-        model,
-        endpoint,
-        ...(apiKey && { apiKey }) // Only include if provided
-      };
-      
-      await storage.setLLMConfig(config);
-
-      console.log(`LLM configuration updated: ${provider} - ${model}`);
+      console.log(`LLM configuration updated in localStorage: ${provider} - ${model}`);
       
       res.json({ 
-        message: "LLM configuration saved successfully",
+        message: "LLM configuration saved to localStorage and system status updated",
         config: {
           provider,
           model,
           endpoint,
-          hasApiKey: !!apiKey
+          hasApiKey: !!apiKey,
+          storageLocation: 'localStorage'
         }
       });
     } catch (error) {
-      console.error('Failed to save LLM configuration:', error);
-      res.status(500).json({ message: "Failed to save LLM configuration" });
+      console.error('Failed to update LLM system status:', error);
+      res.status(500).json({ message: "Failed to update LLM system status" });
     }
   });
 
@@ -240,13 +236,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check clarification endpoint for conversational AI
   app.post("/api/check-clarification", async (req, res) => {
     try {
-      const { query } = req.body;
+      const { query, llmConfig } = req.body;
       
       if (!query || typeof query !== 'string') {
         return res.status(400).json({ message: "Query is required" });
       }
 
-      const clarificationResult = await llmService.checkClarification(query);
+      const clarificationResult = await llmService.checkClarification(query, llmConfig);
       res.json(clarificationResult);
     } catch (error) {
       console.error('Clarification check error:', error);
@@ -290,9 +286,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       broadcast({ type: 'new_email', emailLog });
 
       try {
+        // Extract LLM config from request if provided
+        const { llmConfig } = req.body;
+        
         // Analyze query with LLM
         console.log('Analyzing query with LLM...');
-        const llmResponse = await llmService.analyzeEmailContent(query);
+        const llmResponse = await llmService.analyzeEmailContent(query, llmConfig);
         
         await storage.updateEmailLog(emailLog.id, {
           llmResponse: llmResponse,

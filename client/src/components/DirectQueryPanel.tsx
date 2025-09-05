@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Loader2, AlertCircle, CheckCircle, Bot, User, Brain, Code, Play, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { llmConfigStorage } from "@/lib/llmConfigStorage";
 
 interface QueryResult {
   id: string;
@@ -71,10 +72,13 @@ export default function DirectQueryPanel() {
   // Check if query needs clarification
   const checkClarificationMutation = useMutation({
     mutationFn: async (queryText: string): Promise<ClarificationResponse> => {
+      // Get LLM configuration from localStorage
+      const llmConfig = llmConfigStorage.get();
+      
       const response = await fetch("/api/check-clarification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: queryText }),
+        body: JSON.stringify({ query: queryText, llmConfig }),
       });
       if (!response.ok) {
         // If endpoint doesn't exist, create a mock response based on simple heuristics
@@ -101,10 +105,13 @@ export default function DirectQueryPanel() {
 
   const processQueryMutation = useMutation({
     mutationFn: async (queryText: string) => {
+      // Get LLM configuration from localStorage
+      const llmConfig = llmConfigStorage.get();
+      
       const response = await fetch("/api/process-query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: queryText }),
+        body: JSON.stringify({ query: queryText, llmConfig }),
       });
       if (!response.ok) throw new Error("Failed to process query");
       return response.json();
