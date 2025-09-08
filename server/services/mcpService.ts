@@ -132,10 +132,7 @@ export class MCPService {
 
       // Check if script exists
       const scriptPath = path.join(this.resourcesPath, 'scripts', scriptName);
-      console.log('MCP Service - Checking script path:', scriptPath);
-      console.log('MCP Service - Script exists:', fs.existsSync(scriptPath));
       if (!fs.existsSync(scriptPath)) {
-        console.log('MCP Service - Available scripts:', fs.readdirSync(path.join(this.resourcesPath, 'scripts')));
         return {
           success: false,
           processingTime: Date.now() - startTime,

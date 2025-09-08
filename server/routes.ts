@@ -504,9 +504,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Debug log to see what we're working with
         console.log('Query:', query);
-        console.log('Full langchainResult:', JSON.stringify(langchainResult, null, 2));
-        console.log('finalResult:', JSON.stringify(finalResult, null, 2));
-        console.log('Content:', content.substring(0, 200) + '...');
         console.log('Tools used:', toolsUsed);
         
         // Look for depth plotter references - improved detection
