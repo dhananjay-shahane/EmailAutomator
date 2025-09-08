@@ -14,13 +14,14 @@ import { llmConfigStorage } from "@/lib/llmConfigStorage";
 interface QueryResult {
   id: string;
   query: string;
-  llmResponse: {
-    script: string;
-    lasFile: string;
-    tool: string;
-    confidence: number;
-    reasoning: string;
+  llmResponse?: {
+    script?: string;
+    lasFile?: string;
+    tool?: string;
+    confidence?: number;
+    reasoning?: string;
   };
+  agentResponse?: any; // New Langchain agent response structure
   outputFile?: string;
   status: "processing" | "completed" | "error";
   errorMessage?: string;
