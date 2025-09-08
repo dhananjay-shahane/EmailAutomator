@@ -35,16 +35,7 @@ Before you begin, ensure you have the following installed on your system:
   git --version
   ```
 
-### 4. PostgreSQL Database
-- **Option 1 - Local PostgreSQL**:
-  - Download from [postgresql.org](https://www.postgresql.org/download/)
-  - Install and remember your username/password
-  - Create a database named `email_las_system`
-
-- **Option 2 - Cloud Database (Recommended)**:
-  - Use [Neon Database](https://neon.tech/) (free tier available)
-  - Or [Supabase](https://supabase.com/) (free tier available)
-  - Or [Railway](https://railway.app/) PostgreSQL
+**Note**: This project now uses JSON files for data storage instead of a database, making setup much simpler!
 
 ## Project Setup Instructions
 
@@ -81,22 +72,17 @@ If `requirements.txt` doesn't exist, install these packages manually:
 pip install pandas numpy matplotlib lasio
 ```
 
-### Step 4: Database Setup
+### Step 4: Configuration Setup (Optional)
 
-#### Configure Database Connection
-1. Create a `.env` file in the project root:
+The application now uses JSON files for data storage, so no database setup is required! However, you can still configure optional features:
+
+1. Create a `.env` file in the project root (optional):
 ```bash
 touch .env
 ```
 
-2. Add your database connection details to `.env`:
+2. Add optional configuration to `.env`:
 ```env
-# Database Configuration
-DATABASE_URL="postgresql://username:password@localhost:5432/email_las_system"
-
-# If using Neon Database, your URL will look like:
-# DATABASE_URL="postgresql://username:password@ep-xyz.us-east-1.aws.neon.tech/email_las_system?sslmode=require"
-
 # Email Configuration (optional for initial setup)
 IMAP_HOST="imap.gmail.com"
 IMAP_PORT=993
@@ -112,16 +98,11 @@ SMTP_PASSWORD="your-app-password"
 LLM_ENDPOINT="http://localhost:11434"
 LLM_MODEL="llama3.2:1b"
 
-# Session Secret
+# Session Secret (optional, will use default if not provided)
 SESSION_SECRET="your-secret-key-here"
 ```
 
-#### Initialize Database Schema
-```bash
-npm run db:push
-```
-
-This command will create all the necessary tables in your database.
+**Data Storage**: The application automatically creates a `data/storage.json` file to store all your data. No setup required!
 
 ### Step 5: Email Configuration (Optional)
 
@@ -157,7 +138,7 @@ LLM_MODEL="gpt-3.5-turbo"
 OPENAI_API_KEY="your-openai-api-key"
 ```
 
-### Step 7: Start the Development Server
+### Step 5: Start the Development Server
 ```bash
 npm run dev
 ```
@@ -180,9 +161,10 @@ The application will be available at: `http://localhost:5000`
 - Open `http://localhost:5000/api/dashboard` in your browser
 - You should see JSON data with system status
 
-### 3. Check Database Connection
-- The dashboard should show database connection status
-- If there are errors, check your DATABASE_URL in `.env`
+### 3. Check Data Storage
+- The dashboard should show system status indicators
+- Data is automatically saved to `data/storage.json`
+- No database setup required!
 
 ### 4. Check Email Integration (if configured)
 - Navigate to Settings page
@@ -230,10 +212,10 @@ project-root/
 
 ## Common Issues and Solutions
 
-### Issue: "Cannot connect to database"
-- **Solution**: Check your DATABASE_URL in `.env` file
-- Ensure PostgreSQL is running (if using local database)
-- Verify database credentials
+### Issue: "Data not saving or loading"
+- **Solution**: Check that the application has write permissions in the project directory
+- Ensure the `data/` folder can be created
+- Check file system permissions
 
 ### Issue: "Module not found" errors
 - **Solution**: Run `npm install` again

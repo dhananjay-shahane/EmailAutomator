@@ -27,11 +27,11 @@ Preferred communication style: Simple, everyday language.
 - **Development**: Hot module replacement via Vite middleware
 
 ### Data Storage Solutions
-- **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
-- **Database Provider**: Neon Database (@neondatabase/serverless)
-- **Schema Management**: Drizzle Kit for migrations and schema definitions
-- **Session Storage**: PostgreSQL session store (connect-pg-simple)
-- **In-Memory Storage**: Fallback storage implementation for development
+- **Storage System**: JSON file-based storage system
+- **Data Location**: `data/storage.json` in the project directory
+- **Automatic Persistence**: Data is automatically saved and loaded from JSON files
+- **No Database Required**: Simplified setup without PostgreSQL dependencies
+- **Type Safety**: Zod schemas for runtime type validation
 
 ### Email Processing Pipeline
 - **Email Monitoring**: IMAP connection for real-time email fetching
@@ -59,11 +59,10 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 ### Core Framework Dependencies
-- **@neondatabase/serverless**: PostgreSQL database connection and querying
-- **drizzle-orm**: Type-safe ORM for database operations
-- **drizzle-kit**: Database schema management and migrations
 - **express**: Web application framework for the backend API
 - **vite**: Build tool and development server for the frontend
+- **zod**: Runtime type validation and schema definition for data integrity
+- **fs/promises**: Node.js file system operations for JSON storage
 
 ### UI and Frontend Libraries
 - **@radix-ui/***: Comprehensive set of accessible UI primitives
