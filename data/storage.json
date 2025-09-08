@@ -210,6 +210,21 @@
       "completedAt": "2025-09-08T12:46:02.086Z",
       "id": "c815a584-c2ee-4841-adb2-d68ed2c02a1e",
       "createdAt": "2025-09-08T12:45:15.669Z"
+    },
+    {
+      "sender": "langchain-agent@system.local",
+      "subject": "Langchain AI Agent Processing",
+      "body": "hi",
+      "status": "error",
+      "llmResponse": null,
+      "mcpScript": null,
+      "lasFile": null,
+      "outputFile": null,
+      "errorMessage": "Cannot read properties of undefined (reading 'script')",
+      "processingTime": null,
+      "completedAt": "2025-09-08T13:47:35.501Z",
+      "id": "bf41788d-ab3b-4821-86d3-ba28be6d6e91",
+      "createdAt": "2025-09-08T13:47:21.980Z"
     }
   ],
   "systemStatuses": [
@@ -218,10 +233,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T13:46:31.723Z",
+        "lastCheck": "2025-09-08T13:47:31.724Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T13:46:31.723Z"
+      "lastCheck": "2025-09-08T13:47:31.724Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
