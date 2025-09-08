@@ -382,10 +382,35 @@ if __name__ == "__main__":
 
       if (result.success && result.stdout) {
         try {
-          const response = JSON.parse(result.stdout);
+          // Extract only the JSON part from stdout (everything from first { to last })
+          const lines = result.stdout.split('\n');
+          let jsonLines = [];
+          let inJson = false;
+          let braceCount = 0;
+          
+          for (const line of lines) {
+            if (line.trim().startsWith('{')) {
+              inJson = true;
+              braceCount = 0;
+            }
+            
+            if (inJson) {
+              jsonLines.push(line);
+              braceCount += (line.match(/\{/g) || []).length;
+              braceCount -= (line.match(/\}/g) || []).length;
+              
+              if (braceCount === 0) {
+                break;
+              }
+            }
+          }
+          
+          const jsonString = jsonLines.join('\n');
+          const response = JSON.parse(jsonString);
           return response;
         } catch (parseError) {
           console.error('Failed to parse Langchain clarification response:', parseError);
+          console.error('Raw stdout:', result.stdout);
           throw new Error(`Failed to parse agent response: ${parseError}`);
         }
       } else {
@@ -419,7 +444,31 @@ if __name__ == "__main__":
 
       if (result.success && result.stdout) {
         try {
-          const agentResponse = JSON.parse(result.stdout);
+          // Extract only the JSON part from stdout (everything from first { to last })
+          const lines = result.stdout.split('\n');
+          let jsonLines = [];
+          let inJson = false;
+          let braceCount = 0;
+          
+          for (const line of lines) {
+            if (line.trim().startsWith('{')) {
+              inJson = true;
+              braceCount = 0;
+            }
+            
+            if (inJson) {
+              jsonLines.push(line);
+              braceCount += (line.match(/\{/g) || []).length;
+              braceCount -= (line.match(/\}/g) || []).length;
+              
+              if (braceCount === 0) {
+                break;
+              }
+            }
+          }
+          
+          const jsonString = jsonLines.join('\n');
+          const agentResponse = JSON.parse(jsonString);
           
           return {
             id: `langchain-${Date.now()}`,
