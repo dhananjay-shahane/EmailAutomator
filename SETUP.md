@@ -59,18 +59,37 @@ This will install all the required dependencies including:
 - And many other packages listed in package.json
 
 ### Step 3: Install Python Dependencies
+
+This project uses `uv` for Python package management, which provides faster and more reliable dependency resolution.
+
+#### Option 1: Automatic Installation (Recommended)
+The Python dependencies will be automatically installed when you run the application for the first time. The project includes a `pyproject.toml` file that defines all required packages.
+
+#### Option 2: Manual Installation
+If you want to install Python dependencies manually:
+
 ```bash
-# Navigate to the project root if not already there
+# Navigate to the project root
 cd <project-directory>
 
-# Install Python dependencies
-pip install -r requirements.txt
+# Install uv (Python package manager)
+pip install uv
+
+# Install project dependencies
+uv add matplotlib numpy pandas lasio
+
+# Or install individually if needed
+uv add matplotlib
+uv add numpy  
+uv add pandas
+uv add lasio
 ```
 
-If `requirements.txt` doesn't exist, install these packages manually:
-```bash
-pip install pandas numpy matplotlib lasio
-```
+#### Required Python Packages:
+- **matplotlib**: For generating data visualizations and charts
+- **numpy**: For numerical computations and data processing
+- **pandas**: For data manipulation and analysis
+- **lasio**: For reading and processing LAS (Log ASCII Standard) files
 
 ### Step 4: Configuration Setup (Optional)
 
@@ -150,6 +169,38 @@ This command will:
 
 The application will be available at: `http://localhost:5000`
 
+## Python Environment Verification
+
+Before testing the main application, verify that the Python environment is working correctly:
+
+### Test Python Dependencies
+```bash
+# Test that all packages are available
+uv run python -c "import matplotlib, numpy, pandas, lasio; print('All Python dependencies are working!')"
+
+# Test a specific analysis script
+cd mcp_resources
+uv run python scripts/gamma_ray_analyzer.py las_files/production_well_02.las ../output/test_gamma.png
+
+# Check if the output file was created
+ls -la output/test_gamma.png
+```
+
+### Verify LAS File Processing
+```bash
+# List available LAS files
+ls -la mcp_resources/las_files/
+
+# List available analysis scripts  
+ls -la mcp_resources/scripts/
+```
+
+You should see files like:
+- `production_well_02.las` - Sample LAS data file
+- `gamma_ray_analyzer.py` - Gamma ray analysis script
+- `depth_visualization.py` - Depth plotting script
+- And other analysis scripts
+
 ## Verification Steps
 
 ### 1. Check Frontend
@@ -222,8 +273,10 @@ project-root/
 - Delete `node_modules` and `package-lock.json`, then run `npm install`
 
 ### Issue: Python scripts not working
-- **Solution**: Ensure Python dependencies are installed: `pip install pandas numpy matplotlib lasio`
-- Check Python path in your system
+- **Solution**: Ensure Python dependencies are installed using uv: `uv add matplotlib numpy pandas lasio`
+- Verify uv is installed: `pip install uv`
+- Test Python environment: `uv run python -c "import matplotlib; print('Working!')"`
+- Check that scripts are being executed with `uv run python` not plain `python3`
 
 ### Issue: Email features not working
 - **Solution**: Verify email credentials in `.env`
