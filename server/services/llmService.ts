@@ -127,7 +127,14 @@ Examples:
 - "resistivity visualization" = RESISTIVITY → resistivity_analyzer.py (NOT depth_visualization.py)
 - "porosity chart" = POROSITY → porosity_calculator.py (NOT depth_visualization.py)
 
-CRITICAL: If user specifies a script name OR LAS file, USE EXACTLY what they specify!
+CRITICAL RULES - FOLLOW EXACTLY:
+1. If user specifies a script name OR LAS file, USE EXACTLY what they specify!
+2. If user mentions "lithology" anywhere, ALWAYS use lithology_classifier.py + lithology_classifier + development_well_05.las
+3. If user mentions "gamma" anywhere, ALWAYS use gamma_ray_analyzer.py + gamma_analyzer + production_well_02.las
+4. If user mentions "resistivity" anywhere, ALWAYS use resistivity_analyzer.py + resistivity_analyzer + exploration_well_04.las
+5. If user mentions "porosity" anywhere, ALWAYS use porosity_calculator.py + porosity_calculator + offshore_well_03.las
+
+FORBIDDEN: Never mix different analysis types. If user asks for lithology, DO NOT give gamma ray analysis!
 
 Example responses:
 {
@@ -136,6 +143,14 @@ Example responses:
   "tool": "gamma_analyzer",
   "confidence": 0.95,
   "reasoning": "Request mentions gamma ray, using gamma ray analysis with production well data"
+}
+
+{
+  "script": "lithology_classifier.py",
+  "lasFile": "development_well_05.las",
+  "tool": "lithology_classifier",
+  "confidence": 0.95,
+  "reasoning": "Request mentions lithology classification, using lithology classifier with development well data"
 }
 
 {
