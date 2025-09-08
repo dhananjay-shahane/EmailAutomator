@@ -44,21 +44,21 @@ export interface LangchainClarificationResponse {
 
 export class LangchainLlmService {
   private pythonPath: string;
-  private scriptsPath: string;
+  private mcpServersPath: string;
   private outputPath: string;
 
   constructor() {
     this.pythonPath = "uv";
-    this.scriptsPath = process.env.LANGCHAIN_SCRIPTS_PATH || "./langchain_scripts";
+    this.mcpServersPath = process.env.MCP_SERVERS_PATH || "./mcp_servers";
     this.outputPath = process.env.MCP_OUTPUT_PATH || "./output";
     
     this.initializeDirectories();
   }
 
   private initializeDirectories(): void {
-    // Create scripts directory if it doesn't exist
-    if (!fs.existsSync(this.scriptsPath)) {
-      fs.mkdirSync(this.scriptsPath, { recursive: true });
+    // Create MCP servers directory if it doesn't exist
+    if (!fs.existsSync(this.mcpServersPath)) {
+      fs.mkdirSync(this.mcpServersPath, { recursive: true });
     }
 
     // Create the main Langchain agent script if it doesn't exist
@@ -66,14 +66,14 @@ export class LangchainLlmService {
   }
 
   private createLangchainAgentScript(): void {
-    const agentScriptPath = path.join(this.scriptsPath, "langchain_agent.py");
+    const agentScriptPath = path.join(this.mcpServersPath, "langchain_agent.py");
     
     if (!fs.existsSync(agentScriptPath)) {
       const agentScript = `#!/usr/bin/env python3
 """
 Langchain MCP Agent for LAS file analysis
-This script uses Langchain with MCP adapters to create intelligent AI agents
-that can understand user queries and coordinate multiple tools for analysis.
+This script uses Langchain with MCP adapters to connect to multiple MCP servers
+and coordinate intelligent analysis of LAS files.
 """
 
 import asyncio
@@ -86,27 +86,60 @@ from pathlib import Path
 try:
     from langchain_mcp_adapters.client import MultiServerMCPClient
     from langchain_mcp_adapters.tools import load_mcp_tools
-    from langchain.agents import create_agent
+    from langgraph.prebuilt import create_react_agent
     from langchain_openai import ChatOpenAI
     from langchain_anthropic import ChatAnthropic
     from langchain_core.messages import HumanMessage, SystemMessage
-    from langchain_core.tools import Tool
-    from mcp import ClientSession, StdioServerParameters
-    from mcp.client.stdio import stdio_client
 except ImportError as e:
     print(f"Error importing required packages: {e}")
-    print("Please ensure langchain-mcp-adapters, langchain, and related packages are installed")
+    print("Please ensure langchain-mcp-adapters, langgraph, langchain, and related packages are installed")
     sys.exit(1)
 
 class LangchainMCPAgent:
     def __init__(self):
-        self.mcp_resources_path = os.environ.get('MCP_RESOURCES_PATH', './mcp_resources')
-        self.output_path = os.environ.get('MCP_OUTPUT_PATH', './output')
+        self.base_path = Path(__file__).parent.parent
+        self.mcp_servers_path = self.base_path / "mcp_servers"
+        self.output_path = self.base_path / "output"
         self.model = None
+        self.mcp_client = None
         self.tools = []
         
-    async def initialize_agent(self, llm_config: Optional[Dict] = None):
-        """Initialize the Langchain agent with MCP tools"""
+    async def initialize_mcp_servers(self):
+        """Initialize connection to MCP servers"""
+        try:
+            # Configure MCP servers
+            server_config = {
+                "scripts": {
+                    "command": "python",
+                    "args": [str(self.mcp_servers_path / "scripts_server.py")],
+                    "transport": "stdio",
+                },
+                "resources": {
+                    "command": "python", 
+                    "args": [str(self.mcp_servers_path / "resources_server.py")],
+                    "transport": "stdio",
+                },
+                "tools": {
+                    "command": "python",
+                    "args": [str(self.mcp_servers_path / "tools_server.py")],
+                    "transport": "stdio",
+                }
+            }
+            
+            # Initialize MultiServerMCPClient
+            self.mcp_client = MultiServerMCPClient(server_config)
+            
+            # Load tools from all MCP servers
+            self.tools = await self.mcp_client.get_tools()
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error initializing MCP servers: {e}")
+            return False
+        
+    async def initialize_llm(self, llm_config: Optional[Dict] = None):
+        """Initialize the LLM based on configuration"""
         try:
             # Configure LLM based on provided config
             if llm_config and llm_config.get('provider'):
@@ -123,277 +156,197 @@ class LangchainMCPAgent:
                         temperature=0.1
                     )
                 else:
-                    # Fallback to a local model or mock model for development
-                    self.model = self._create_mock_model()
+                    raise ValueError(f"Unsupported provider: {llm_config['provider']}")
             else:
-                # Use mock model for development
-                self.model = self._create_mock_model()
+                # Default to OpenAI if no config provided
+                self.model = ChatOpenAI(
+                    model='gpt-3.5-turbo',
+                    temperature=0.1
+                )
+                
+            return True
             
-            # Set up MCP client and load tools
-            await self._setup_mcp_tools()
+        except Exception as e:
+            print(f"Error initializing LLM: {e}")
+            return False
+
+    async def create_agent(self):
+        """Create the LangGraph agent with MCP tools"""
+        try:
+            if not self.model:
+                raise ValueError("LLM not initialized")
+            if not self.tools:
+                raise ValueError("MCP tools not loaded")
+                
+            # Create the React agent with loaded tools
+            self.agent = create_react_agent(self.model, self.tools)
             
             return True
+            
         except Exception as e:
-            print(f"Error initializing agent: {e}")
+            print(f"Error creating agent: {e}")
             return False
-    
-    def _create_mock_model(self):
-        """Create a mock model for development purposes"""
-        class MockChatModel:
-            def invoke(self, messages):
-                # Mock response for development
-                return type('obj', (object,), {
-                    'content': json.dumps({
-                        'analysis': 'Mock analysis - agent planning step',
-                        'action': 'analyze_query',
-                        'confidence': 0.8
-                    })
-                })()
-        return MockChatModel()
-    
-    async def _setup_mcp_tools(self):
-        """Set up MCP tools for the agent"""
+
+    async def process_query(self, query: str) -> Dict[str, Any]:
+        """Process a user query using the Langchain agent"""
         try:
-            # For now, create mock tools representing our MCP capabilities
-            self.tools = [
-                Tool(
-                    name="depth_plotter",
-                    description="Creates depth visualization plots from LAS files",
-                    func=self._mock_tool_execution
-                ),
-                Tool(
-                    name="gamma_analyzer", 
-                    description="Analyzes gamma ray logs for geological interpretation",
-                    func=self._mock_tool_execution
-                ),
-                Tool(
-                    name="resistivity_analyzer",
-                    description="Analyzes resistivity logs for formation evaluation", 
-                    func=self._mock_tool_execution
-                ),
-                Tool(
-                    name="porosity_calculator",
-                    description="Calculates porosity from neutron and density logs",
-                    func=self._mock_tool_execution
-                ),
-                Tool(
-                    name="lithology_classifier",
-                    description="Classifies rock types and lithology from log data",
-                    func=self._mock_tool_execution
-                )
+            # Prepare the query for the agent
+            messages = [
+                SystemMessage(content="You are an expert in LAS (Log ASCII Standard) file analysis. Use the available MCP tools to analyze user requests and determine the appropriate scripts, tools, and LAS files to use. Always provide clear reasoning for your decisions."),
+                HumanMessage(content=query)
             ]
-        except Exception as e:
-            print(f"Error setting up MCP tools: {e}")
-    
-    def _mock_tool_execution(self, query: str) -> str:
-        """Mock tool execution for development"""
-        return f"Tool executed successfully with query: {query}"
-    
-    async def check_clarification(self, query: str, llm_config: Optional[Dict] = None) -> Dict:
-        """Check if a query needs clarification and create execution plan"""
-        try:
-            await self.initialize_agent(llm_config)
             
-            # Analyze query complexity and create plan
-            plan_prompt = f"""
-            Analyze this LAS file analysis query and determine if clarification is needed:
+            # Execute the agent
+            response = await self.agent.ainvoke({"messages": messages})
             
-            Query: "{query}"
+            # Extract the final recommendation from agent response
+            # This is a simplified approach - in practice, you'd parse the agent's tool calls
+            agent_steps = []
             
-            Available tools:
-            - depth_plotter: for depth visualization
-            - gamma_analyzer: for gamma ray analysis  
-            - resistivity_analyzer: for resistivity analysis
-            - porosity_calculator: for porosity calculations
-            - lithology_classifier: for lithology classification
+            # For now, use the tools to get a recommendation
+            if hasattr(self.mcp_client, 'session'):
+                async with self.mcp_client.session("tools") as session:
+                    # Use tools server to match query to appropriate tool
+                    tools_from_session = await load_mcp_tools(session)
+                    
+                    # Find the tool matching function
+                    for tool in tools_from_session:
+                        if tool.name == "match_tool_to_query":
+                            tool_result = await tool.ainvoke({"query": query})
+                            
+                            if tool_result.get("success"):
+                                agent_steps.append({
+                                    "tool": "match_tool_to_query",
+                                    "action": "analyze_query",
+                                    "result": json.dumps(tool_result),
+                                    "confidence": tool_result.get("confidence", 0.7)
+                                })
+                                
+                                return {
+                                    "steps": agent_steps,
+                                    "finalResult": {
+                                        "script": tool_result.get("script", "depth_visualization.py"),
+                                        "lasFile": tool_result.get("las_file", "sample_well_01.las"),
+                                        "tool": tool_result.get("tool", "depth_plotter"),
+                                        "confidence": tool_result.get("confidence", 0.7),
+                                        "reasoning": tool_result.get("reasoning", "Matched based on query analysis")
+                                    }
+                                }
             
-            Respond with JSON containing:
-            - needsClarification: boolean
-            - confidence: 0.0-1.0 confidence score
-            - suggestions: array of suggestion strings if clarification needed
-            - message: helpful message to user
-            - agentPlan: array of execution steps if query is clear
-            """
-            
-            # Simple keyword-based analysis for demo
-            query_lower = query.lower()
-            confidence = 0.9
-            needs_clarification = False
-            suggestions = []
-            agent_plan = []
-            
-            # Determine if query is clear enough
-            if any(keyword in query_lower for keyword in ['gamma', 'depth', 'resistivity', 'porosity', 'lithology']):
-                needs_clarification = False
-                
-                # Create execution plan
-                if 'gamma' in query_lower:
-                    agent_plan = [
-                        {"step": 1, "description": "Load and validate LAS file", "tool": "data_loader"},
-                        {"step": 2, "description": "Analyze gamma ray logs", "tool": "gamma_analyzer"},
-                        {"step": 3, "description": "Generate visualization", "tool": "chart_generator"}
-                    ]
-                elif 'depth' in query_lower:
-                    agent_plan = [
-                        {"step": 1, "description": "Load LAS file data", "tool": "data_loader"},
-                        {"step": 2, "description": "Create depth plots", "tool": "depth_plotter"},
-                        {"step": 3, "description": "Export visualization", "tool": "file_exporter"}
-                    ]
-                else:
-                    agent_plan = [
-                        {"step": 1, "description": "Analyze query requirements", "tool": "query_analyzer"},
-                        {"step": 2, "description": "Select appropriate analysis tool", "tool": "tool_selector"},
-                        {"step": 3, "description": "Execute analysis", "tool": "execution_engine"}
-                    ]
-            else:
-                needs_clarification = True
-                confidence = 0.3
-                suggestions = [
-                    "Gamma ray analysis with production_well_02.las",
-                    "Depth visualization with sample_well_01.las", 
-                    "Resistivity analysis with exploration_well_04.las",
-                    "Porosity calculation with offshore_well_03.las",
-                    "Lithology classification with development_well_05.las"
-                ]
-            
+            # Fallback response if MCP tools aren't available
             return {
-                "needsClarification": needs_clarification,
-                "confidence": confidence,
-                "suggestions": suggestions,
-                "message": "I can create an execution plan for your analysis." if not needs_clarification else "I need more information to create an execution plan.",
-                "agentPlan": agent_plan if not needs_clarification else None
+                "steps": [{
+                    "tool": "fallback",
+                    "action": "default_analysis",
+                    "result": "Used fallback analysis",
+                    "confidence": 0.5
+                }],
+                "finalResult": {
+                    "script": "depth_visualization.py",
+                    "lasFile": "sample_well_01.las", 
+                    "tool": "depth_plotter",
+                    "confidence": 0.5,
+                    "reasoning": "Fallback: default depth visualization"
+                }
             }
             
         except Exception as e:
+            print(f"Error processing query: {e}")
+            raise e
+
+    async def check_clarification(self, query: str) -> Dict[str, Any]:
+        """Check if query needs clarification"""
+        try:
+            # Simple keyword-based check for now
+            query_lower = query.lower()
+            
+            # Check if query is clear enough
+            key_terms = ["las", "log", "well", "depth", "gamma", "porosity", "permeability", "analysis", "plot", "visualization"]
+            has_key_terms = any(term in query_lower for term in key_terms)
+            
+            if len(query.split()) < 3 or not has_key_terms:
+                return {
+                    "needsClarification": True,
+                    "confidence": 0.3,
+                    "suggestions": [
+                        "Could you specify which type of analysis you need?",
+                        "Which LAS file would you like to analyze?",
+                        "What kind of visualization or calculation are you looking for?"
+                    ],
+                    "message": "Could you provide more details about your analysis request?",
+                    "agentPlan": [
+                        {"step": 1, "description": "Identify analysis type", "tool": "tools_server"},
+                        {"step": 2, "description": "Select appropriate script", "tool": "scripts_server"},
+                        {"step": 3, "description": "Execute analysis", "tool": "scripts_server"}
+                    ]
+                }
+            else:
+                return {
+                    "needsClarification": False,
+                    "confidence": 0.8,
+                    "suggestions": [],
+                    "message": "Query is clear for processing",
+                    "agentPlan": [
+                        {"step": 1, "description": "Analyze query requirements", "tool": "tools_server"},
+                        {"step": 2, "description": "Execute selected script", "tool": "scripts_server"}
+                    ]
+                }
+                
+        except Exception as e:
+            print(f"Error checking clarification: {e}")
             return {
                 "needsClarification": True,
                 "confidence": 0.0,
-                "suggestions": ["Please try rephrasing your query"],
-                "message": f"Error analyzing query: {str(e)}",
+                "suggestions": ["Please try rephrasing your request"],
+                "message": "Error analyzing your request",
                 "agentPlan": None
-            }
-    
-    async def process_query(self, query: str, llm_config: Optional[Dict] = None) -> Dict:
-        """Process a query using the Langchain agent with MCP tools"""
-        try:
-            start_time = asyncio.get_event_loop().time()
-            
-            await self.initialize_agent(llm_config)
-            
-            # Simulate agent execution with multiple steps
-            steps = [
-                {
-                    "tool": "query_analyzer",
-                    "action": "analyze_user_intent",
-                    "result": "Detected request for gamma ray analysis",
-                    "confidence": 0.9
-                },
-                {
-                    "tool": "mcp_resource_manager", 
-                    "action": "select_las_file",
-                    "result": "Selected production_well_02.las",
-                    "confidence": 0.85
-                },
-                {
-                    "tool": "gamma_analyzer",
-                    "action": "execute_analysis",
-                    "result": "Analysis completed successfully",
-                    "confidence": 0.95
-                }
-            ]
-            
-            # Determine final result based on query
-            query_lower = query.lower()
-            if 'gamma' in query_lower:
-                final_result = {
-                    "script": "gamma_ray_analyzer.py",
-                    "lasFile": "production_well_02.las", 
-                    "tool": "gamma_analyzer",
-                    "confidence": 0.95,
-                    "reasoning": "Agent detected gamma ray analysis request and selected appropriate tools"
-                }
-            elif 'depth' in query_lower:
-                final_result = {
-                    "script": "depth_visualization.py",
-                    "lasFile": "sample_well_01.las",
-                    "tool": "depth_plotter", 
-                    "confidence": 0.9,
-                    "reasoning": "Agent planned depth visualization workflow"
-                }
-            else:
-                final_result = {
-                    "script": "gamma_ray_analyzer.py",
-                    "lasFile": "production_well_02.las",
-                    "tool": "gamma_analyzer",
-                    "confidence": 0.8,
-                    "reasoning": "Agent defaulted to gamma ray analysis"
-                }
-            
-            processing_time = (asyncio.get_event_loop().time() - start_time) * 1000
-            
-            return {
-                "id": f"langchain_{int(asyncio.get_event_loop().time())}",
-                "query": query,
-                "agentResponse": {
-                    "steps": steps,
-                    "finalResult": final_result
-                },
-                "status": "completed",
-                "processingTime": int(processing_time)
-            }
-            
-        except Exception as e:
-            return {
-                "id": f"error_{int(asyncio.get_event_loop().time())}",
-                "query": query,
-                "agentResponse": {
-                    "steps": [],
-                    "finalResult": {
-                        "script": "",
-                        "lasFile": "",
-                        "tool": "",
-                        "confidence": 0.0,
-                        "reasoning": f"Error: {str(e)}"
-                    }
-                },
-                "status": "error",
-                "errorMessage": str(e),
-                "processingTime": 0
             }
 
 async def main():
-    """Main entry point for the Langchain agent"""
     if len(sys.argv) < 3:
-        print("Usage: python langchain_agent.py <action> <query> [llm_config_json]")
+        print("Usage: python langchain_agent.py <action> <query> [config_json]")
         sys.exit(1)
     
     action = sys.argv[1]
     query = sys.argv[2]
-    llm_config = None
+    config_json = sys.argv[3] if len(sys.argv) > 3 else "{}"
     
-    if len(sys.argv) > 3:
-        try:
-            llm_config = json.loads(sys.argv[3])
-        except json.JSONDecodeError:
-            print("Warning: Invalid JSON for llm_config, using defaults")
+    try:
+        config = json.loads(config_json)
+    except json.JSONDecodeError:
+        config = {}
     
     agent = LangchainMCPAgent()
     
     try:
+        # Initialize MCP servers
+        mcp_initialized = await agent.initialize_mcp_servers()
+        if not mcp_initialized:
+            raise Exception("Failed to initialize MCP servers")
+        
+        # Initialize LLM
+        llm_initialized = await agent.initialize_llm(config)
+        if not llm_initialized:
+            raise Exception("Failed to initialize LLM")
+        
+        # Create agent
+        agent_created = await agent.create_agent()
+        if not agent_created:
+            raise Exception("Failed to create agent")
+        
         if action == "check_clarification":
-            result = await agent.check_clarification(query, llm_config)
+            result = await agent.check_clarification(query)
         elif action == "process_query":
-            result = await agent.process_query(query, llm_config)
+            result = await agent.process_query(query)
         else:
-            result = {"error": f"Unknown action: {action}"}
+            raise ValueError(f"Unknown action: {action}")
         
         print(json.dumps(result, indent=2))
         
     except Exception as e:
         error_result = {
             "error": str(e),
-            "action": action,
-            "query": query
+            "success": False
         }
         print(json.dumps(error_result, indent=2))
         sys.exit(1)
@@ -417,29 +370,31 @@ if __name__ == "__main__":
     }
   ): Promise<LangchainClarificationResponse> {
     try {
-      const agentScriptPath = path.join(this.scriptsPath, "langchain_agent.py");
+      const agentScriptPath = path.join(this.mcpServersPath, "langchain_agent.py");
       const configJson = config ? JSON.stringify(config) : '{}';
       
-      const result = await this.executePythonScript(
+      const result = await this.executeScript([
+        "run",
         agentScriptPath,
-        ["check_clarification", query, configJson]
-      );
-      
-      const parsed = JSON.parse(result);
-      
-      return {
-        needsClarification: parsed.needsClarification || false,
-        confidence: parsed.confidence || 0.5,
-        suggestions: parsed.suggestions || [],
-        message: parsed.message || "Let me help you with your analysis request.",
-        agentPlan: parsed.agentPlan || []
-      };
-      
+        "check_clarification",
+        query,
+        configJson
+      ]);
+
+      if (result.success && result.stdout) {
+        try {
+          const response = JSON.parse(result.stdout);
+          return response;
+        } catch (parseError) {
+          console.error('Failed to parse Langchain clarification response:', parseError);
+          throw new Error(`Failed to parse agent response: ${parseError}`);
+        }
+      } else {
+        throw new Error(`Langchain agent unavailable: ${result.error || 'Unknown error'}`);
+      }
     } catch (error) {
-      console.error("Langchain clarification error:", error);
-      throw new Error(
-        `Langchain agent unavailable: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      console.error('Langchain clarification error:', error);
+      throw error;
     }
   }
 
@@ -453,34 +408,38 @@ if __name__ == "__main__":
     }
   ): Promise<LangchainQueryResult> {
     try {
-      const agentScriptPath = path.join(this.scriptsPath, "langchain_agent.py");
+      const agentScriptPath = path.join(this.mcpServersPath, "langchain_agent.py");
       const configJson = config ? JSON.stringify(config) : '{}';
       
-      const result = await this.executePythonScript(
+      const result = await this.executeScript([
+        "run", 
         agentScriptPath,
-        ["process_query", query, configJson]
-      );
-      
-      const parsed = JSON.parse(result);
-      
-      if (parsed.error) {
-        throw new Error(parsed.error);
+        "process_query",
+        query,
+        configJson
+      ]);
+
+      if (result.success && result.stdout) {
+        try {
+          const agentResponse = JSON.parse(result.stdout);
+          
+          return {
+            id: `langchain-${Date.now()}`,
+            query,
+            agentResponse,
+            status: "completed",
+            processingTime: result.processingTime,
+          };
+        } catch (parseError) {
+          console.error('Failed to parse Langchain query response:', parseError);
+          throw new Error(`Failed to parse agent response: ${parseError}`);
+        }
+      } else {
+        throw new Error(`Langchain processing failed: ${result.error || 'Unknown error'}`);
       }
-      
-      return {
-        id: parsed.id,
-        query: parsed.query,
-        agentResponse: parsed.agentResponse,
-        status: parsed.status,
-        errorMessage: parsed.errorMessage,
-        processingTime: parsed.processingTime
-      };
-      
     } catch (error) {
-      console.error("Langchain query processing error:", error);
-      throw new Error(
-        `Failed to process query with Langchain agent: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      console.error('Langchain query processing error:', error);
+      throw error;
     }
   }
 
@@ -494,54 +453,78 @@ if __name__ == "__main__":
     
     try {
       // Test with a simple clarification check
-      const result = await this.checkClarification("test connection", config);
-      
+      const response = await this.checkClarification("test connection", config);
       const responseTime = Date.now() - startTime;
       
       return {
         success: true,
-        responseTime: responseTime / 1000, // Convert to seconds
+        responseTime
       };
     } catch (error) {
       const responseTime = Date.now() - startTime;
       return {
         success: false,
-        responseTime: responseTime / 1000,
-        error: error instanceof Error ? error.message : "Langchain agent unavailable",
+        responseTime,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
 
-  private async executePythonScript(scriptPath: string, args: string[]): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const pythonProcess = spawn(this.pythonPath, ['run', 'python', scriptPath, ...args], {
+  private async executeScript(args: string[]): Promise<{
+    success: boolean;
+    stdout?: string;
+    stderr?: string;
+    error?: string;
+    processingTime?: number;
+  }> {
+    return new Promise((resolve) => {
+      const startTime = Date.now();
+      
+      const child = spawn(this.pythonPath, args, {
+        cwd: process.cwd(),
         stdio: ['pipe', 'pipe', 'pipe'],
-        cwd: process.cwd()
       });
 
       let stdout = '';
       let stderr = '';
 
-      pythonProcess.stdout.on('data', (data) => {
+      child.stdout.on('data', (data) => {
         stdout += data.toString();
       });
 
-      pythonProcess.stderr.on('data', (data) => {
+      child.stderr.on('data', (data) => {
         stderr += data.toString();
       });
 
-      pythonProcess.on('close', (code) => {
+      child.on('close', (code) => {
+        const processingTime = Date.now() - startTime;
+        
         if (code === 0) {
-          resolve(stdout.trim());
+          resolve({
+            success: true,
+            stdout: stdout.trim(),
+            stderr: stderr.trim() || undefined,
+            processingTime
+          });
         } else {
-          console.error(`Langchain script stderr: ${stderr}`);
-          reject(new Error(`Langchain script execution failed with code ${code}: ${stderr}`));
+          console.error('Langchain script stderr:', stderr);
+          resolve({
+            success: false,
+            stdout: stdout.trim() || undefined,
+            stderr: stderr.trim(),
+            error: `Langchain script execution failed with code ${code}: ${stderr}`,
+            processingTime
+          });
         }
       });
 
-      pythonProcess.on('error', (error) => {
-        console.error(`Failed to start Langchain Python process: ${error.message}`);
-        reject(error);
+      child.on('error', (error) => {
+        const processingTime = Date.now() - startTime;
+        resolve({
+          success: false,
+          error: `Failed to execute Langchain script: ${error.message}`,
+          processingTime
+        });
       });
     });
   }

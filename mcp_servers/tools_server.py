@@ -170,7 +170,7 @@ def recommend_script_and_tool(query: str, las_file: str = None) -> Dict[str, Any
         "success": True,
         "script": script,
         "tool": tool_name,
-        "las_file": las_file or "sample_well_01.las",  # default fallback
+        "las_file": las_file if las_file else "sample_well_01.las",  # default fallback
         "confidence": tool_match["confidence"],
         "reasoning": f"Query matched '{tool_name}' based on keywords: {', '.join(tool_match['matched_keywords'])}",
         "query": query,

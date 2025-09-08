@@ -94,7 +94,7 @@ def execute_script(script_name: str, las_file: str, tool: str = None) -> Dict[st
         # Prepare command
         cmd = [sys.executable, str(script_path), str(las_path)]
         if tool:
-            cmd.extend([tool])
+            cmd.extend([str(tool)])
         
         # Execute script
         start_time = datetime.now()
