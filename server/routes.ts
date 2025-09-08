@@ -511,10 +511,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const queryLower = query.toLowerCase();
         const contentLower = content.toLowerCase();
         
-        // Direct mapping from MCP tool names to scripts
+        // Direct mapping from MCP tool names to actual scripts
         const toolMappings = {
-          'create_depth_plot': { script: 'depth_plotter.py', tool: 'depth_plotter' },
-          'analyze_depth_data': { script: 'depth_plotter.py', tool: 'depth_plotter' },
+          'create_depth_plot': { script: 'depth_visualization.py', tool: 'depth_plotter' },
+          'analyze_depth_data': { script: 'depth_visualization.py', tool: 'depth_plotter' },
           'analyze_gamma_ray_formations': { script: 'gamma_ray_analyzer.py', tool: 'gamma_analyzer' },
           'calculate_formation_properties': { script: 'gamma_ray_analyzer.py', tool: 'gamma_analyzer' },
           'calculate_porosity': { script: 'porosity_calculator.py', tool: 'porosity_calculator' },
@@ -534,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Fallback to text-based detection if no direct mapping found
         if (!scriptName) {
           if (queryLower.includes('depth') || contentLower.includes('depth')) {
-            scriptName = 'depth_plotter.py';
+            scriptName = 'depth_visualization.py';
             toolName = 'depth_plotter';
             console.log('Detected depth request via text analysis');
           }
