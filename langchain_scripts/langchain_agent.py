@@ -56,12 +56,9 @@ class LangchainMCPAgent:
                     # Fallback to mock model
                     self.model = self._create_mock_model()
             else:
-                # Use default Ollama configuration
-                self.model = self._create_ollama_mock_model({
-                    'provider': 'ollama',
-                    'model': 'llama3.2:1b',
-                    'endpoint': 'https://88c46355da8c.ngrok-free.app'
-                })
+                # No LLM configuration provided - use mock model instead of defaults
+                print("Warning: No LLM configuration provided, using mock model", file=sys.stderr)
+                self.model = self._create_mock_model()
             
             # Load MCP server data
             await self._load_mcp_server_data()
