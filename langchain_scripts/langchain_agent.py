@@ -129,7 +129,7 @@ class LangchainMCPAgent:
                 return json.loads(result.stdout)
             return []
         except Exception as e:
-            print(f"Error calling MCP tools server: {e}")
+            print(f"Error calling MCP tools server: {e}", file=sys.stderr)
             return []
     
     async def _call_mcp_scripts_server(self, function_name: str, *args) -> List[Dict[str, Any]]:
@@ -141,7 +141,7 @@ class LangchainMCPAgent:
                 return json.loads(result.stdout)
             return []
         except Exception as e:
-            print(f"Error calling MCP scripts server: {e}")
+            print(f"Error calling MCP scripts server: {e}", file=sys.stderr)
             return []
     
     async def _call_mcp_resources_server(self, function_name: str, *args) -> List[str]:
@@ -153,7 +153,7 @@ class LangchainMCPAgent:
                 return json.loads(result.stdout)
             return []
         except Exception as e:
-            print(f"Error calling MCP resources server: {e}")
+            print(f"Error calling MCP resources server: {e}", file=sys.stderr)
             return []
     
     async def _discover_local_resources(self):
