@@ -438,6 +438,21 @@
       "completedAt": "2025-09-08T15:24:23.031Z",
       "id": "f9d2ebe0-dfde-4d7b-9b13-7b3962a23795",
       "createdAt": "2025-09-08T15:23:10.941Z"
+    },
+    {
+      "sender": "langchain-agent@system.local",
+      "subject": "Langchain AI Agent Processing",
+      "body": "Use analyze depth data for \n    Analyze depth data characteristics from LAS file\n    \n    Args:\n        las_file: Path to the LAS file to analyze\n        \n    Returns:\n        Dictionary containing depth data analysis results",
+      "status": "processing",
+      "llmResponse": null,
+      "mcpScript": null,
+      "lasFile": null,
+      "outputFile": null,
+      "errorMessage": null,
+      "processingTime": null,
+      "completedAt": null,
+      "id": "b554f3f7-3b5a-4e12-a896-870703b21537",
+      "createdAt": "2025-09-08T15:27:50.735Z"
     }
   ],
   "systemStatuses": [
@@ -446,10 +461,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T15:25:48.789Z",
+        "lastCheck": "2025-09-08T15:27:48.796Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T15:25:48.789Z"
+      "lastCheck": "2025-09-08T15:27:48.796Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
