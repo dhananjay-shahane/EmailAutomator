@@ -63,6 +63,27 @@
       "completedAt": "2025-09-08T11:40:46.324Z",
       "id": "b0ca7d8f-de1a-49e5-86e3-270235896d9b",
       "createdAt": "2025-09-08T11:40:03.548Z"
+    },
+    {
+      "sender": "direct-query@system.local",
+      "subject": "Direct Query Processing",
+      "body": "hi",
+      "status": "completed",
+      "llmResponse": {
+        "script": "gamma_ray_analyzer.py",
+        "lasFile": "production_well_02.las",
+        "tool": "gamma_analyzer",
+        "confidence": 0.95,
+        "reasoning": "Request mentions gamma ray, using gamma ray analysis with production well data"
+      },
+      "mcpScript": "gamma_ray_analyzer.py",
+      "lasFile": "production_well_02.las",
+      "outputFile": "output/2025-09-08_11-44-03/production_well_02_gamma_analyzer_output.png",
+      "errorMessage": null,
+      "processingTime": 1344,
+      "completedAt": "2025-09-08T11:44:04.969Z",
+      "id": "3e21e292-6bb1-4416-a91d-e196a5726e3e",
+      "createdAt": "2025-09-08T11:43:22.804Z"
     }
   ],
   "systemStatuses": [
@@ -71,10 +92,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T11:41:49.004Z",
+        "lastCheck": "2025-09-08T11:43:46.928Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T11:41:49.004Z"
+      "lastCheck": "2025-09-08T11:43:46.928Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
