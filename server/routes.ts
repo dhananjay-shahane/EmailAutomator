@@ -242,6 +242,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Query is required" });
       }
 
+      // Simple keyword detection for greetings and common phrases
+      const queryLower = query.toLowerCase().trim();
+      const greetingKeywords = [
+        'hi', 'hello', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening',
+        'how are you', 'what\'s up', 'thanks', 'thank you', 'goodbye', 'bye', 'see you',
+        'ok', 'okay', 'yes', 'no', 'test', 'testing', 'ping', 'pong'
+      ];
+
+      // Check if query is just a greeting or simple response
+      const isGreeting = greetingKeywords.some(keyword => 
+        queryLower === keyword || queryLower.includes(keyword)
+      );
+
+      if (isGreeting || queryLower.length < 3) {
+        return res.json({
+          needsClarification: true,
+          confidence: 0.9,
+          suggestions: [],
+          message: "Hello! I'm here to help with LAS file analysis. You can ask me to analyze gamma rays, resistivity, porosity, lithology, or create depth visualizations. What would you like to analyze?"
+        });
+      }
+
+      // Check for analysis keywords to determine if this is a valid analysis request
+      const analysisKeywords = [
+        'gamma', 'ray', 'resistivity', 'porosity', 'lithology', 'depth', 'plot', 'analyze', 
+        'analysis', 'visualization', 'calculate', 'las', 'well', 'log', 'formation', 'data'
+      ];
+
+      const hasAnalysisKeyword = analysisKeywords.some(keyword => 
+        queryLower.includes(keyword)
+      );
+
+      // If no analysis keywords, ask for clarification
+      if (!hasAnalysisKeyword) {
+        return res.json({
+          needsClarification: true,
+          confidence: 0.3,
+          suggestions: [
+            "Depth visualization with sample_well_01.las", 
+            "Gamma ray analysis with production_well_02.las",
+            "Resistivity analysis with exploration_well_04.las",
+            "Porosity calculation with offshore_well_03.las",
+            "Lithology classification with development_well_05.las"
+          ],
+          message: "I'm not sure what type of analysis you need. Could you specify what you'd like to analyze?"
+        });
+      }
+
+      // If we have analysis keywords, use LLM for more detailed processing
       const clarificationResult = await llmService.checkClarification(query, llmConfig);
       res.json(clarificationResult);
     } catch (error) {
