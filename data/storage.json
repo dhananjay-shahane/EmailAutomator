@@ -246,6 +246,36 @@
       "completedAt": "2025-09-08T14:09:32.079Z",
       "id": "c95ce8c2-7374-4242-8ed0-976e958c9d43",
       "createdAt": "2025-09-08T14:08:38.990Z"
+    },
+    {
+      "sender": "langchain-agent@system.local",
+      "subject": "Langchain AI Agent Processing",
+      "body": "Use create depth plot for \n    Create depth visualization plots from LAS file data\n    \n    Args:\n        las_file: Path to the LAS file to analyze\n        output_dir: Directory to save the generated plots\n        \n    Returns:\n        Dictionary containing plot information and file paths",
+      "status": "error",
+      "llmResponse": null,
+      "mcpScript": null,
+      "lasFile": null,
+      "outputFile": null,
+      "errorMessage": "Cannot read properties of undefined (reading 'script')",
+      "processingTime": null,
+      "completedAt": "2025-09-08T14:30:59.755Z",
+      "id": "5ea038ed-25d7-42d8-9a5d-830b22b19545",
+      "createdAt": "2025-09-08T14:30:56.875Z"
+    },
+    {
+      "sender": "langchain-agent@system.local",
+      "subject": "Langchain AI Agent Processing",
+      "body": "Use analyze depth data for \n    Analyze depth data characteristics from LAS file\n    \n    Args:\n        las_file: Path to the LAS file to analyze\n        \n    Returns:\n        Dictionary containing depth data analysis results",
+      "status": "error",
+      "llmResponse": null,
+      "mcpScript": null,
+      "lasFile": null,
+      "outputFile": null,
+      "errorMessage": "Cannot read properties of undefined (reading 'script')",
+      "processingTime": null,
+      "completedAt": "2025-09-08T14:31:28.034Z",
+      "id": "cf19b0f1-bfc4-44ac-bae7-27c6614ff5de",
+      "createdAt": "2025-09-08T14:31:25.218Z"
     }
   ],
   "systemStatuses": [
@@ -254,10 +284,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T14:30:06.788Z",
+        "lastCheck": "2025-09-08T14:31:06.788Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T14:30:06.788Z"
+      "lastCheck": "2025-09-08T14:31:06.788Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
