@@ -10,7 +10,7 @@ from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 
 # Initialize MCP server
-mcp = FastMCP("DepthPlotter", description="LAS file depth plotting and visualization tools")
+mcp = FastMCP("DepthPlotter")
 
 @mcp.tool()
 async def create_depth_plot(las_file: str, output_dir: str = "output") -> dict:

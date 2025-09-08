@@ -10,7 +10,7 @@ from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 
 # Initialize MCP server
-mcp = FastMCP("PorosityCalculator", description="Porosity calculation tools from neutron and density logs")
+mcp = FastMCP("PorosityCalculator")
 
 @mcp.tool()
 async def calculate_porosity(las_file: str, output_dir: str = "output") -> dict:

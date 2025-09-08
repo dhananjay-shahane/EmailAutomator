@@ -284,7 +284,12 @@ class LangchainMCPAgent:
     async def close(self):
         """Clean up MCP client connections"""
         if self.mcp_client:
-            await self.mcp_client.close()
+            try:
+                # Use the proper cleanup method for MultiServerMCPClient
+                if hasattr(self.mcp_client, '__aexit__'):
+                    await self.mcp_client.__aexit__(None, None, None)
+            except Exception:
+                pass  # Ignore cleanup errors
 
 async def main():
     """Main entry point for the Langchain MCP agent"""

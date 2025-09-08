@@ -10,7 +10,7 @@ from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 
 # Initialize MCP server
-mcp = FastMCP("GammaRayAnalyzer", description="Gamma ray analysis tools for geological formation identification")
+mcp = FastMCP("GammaRayAnalyzer")
 
 @mcp.tool()
 async def analyze_gamma_ray_formations(las_file: str, output_dir: str = "output") -> dict:
