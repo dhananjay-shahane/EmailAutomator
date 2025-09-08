@@ -15,7 +15,7 @@ from pathlib import Path
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 
 class LangchainMCPAgent:
     def __init__(self):
@@ -68,18 +68,12 @@ class LangchainMCPAgent:
             # Get tools from MCP servers
             self.tools = await self.mcp_client.get_tools()
             
-            # Initialize LLM (using OpenAI or fallback to local if API key not available)
-            if llm_config and llm_config.get('api_key'):
-                model = ChatOpenAI(
-                    model=llm_config.get('model', 'gpt-4o-mini'),
-                    api_key=llm_config['api_key']
-                )
-            else:
-                # Use a basic model for testing - in production should have proper API key
-                model = ChatOpenAI(
-                    model='gpt-4o-mini',
-                    api_key=os.environ.get('OPENAI_API_KEY', 'dummy-key-for-testing')
-                )
+            # Initialize LLM using Ollama
+            model = ChatOllama(
+                model='llama3.2:1b',
+                base_url='https://bc49b6571423.ngrok-free.app',
+                temperature=0.1
+            )
             
             # Create React agent with MCP tools
             self.agent = create_react_agent(model, self.tools)
