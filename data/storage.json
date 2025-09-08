@@ -194,14 +194,20 @@
       "sender": "direct-query@system.local",
       "subject": "Direct Query Processing",
       "body": "Porosity calculation using offshore_well_03.las",
-      "status": "processing",
-      "llmResponse": null,
-      "mcpScript": null,
-      "lasFile": null,
-      "outputFile": null,
+      "status": "completed",
+      "llmResponse": {
+        "script": "porosity_calculator.py",
+        "lasFile": "offshore_well_03.las",
+        "tool": "porosity_calculator",
+        "confidence": 0.7,
+        "reasoning": "Query mentions \"porosity\" which matches porosity_calculator.py (LLM unavailable, used resource matching)"
+      },
+      "mcpScript": "porosity_calculator.py",
+      "lasFile": "offshore_well_03.las",
+      "outputFile": "output/2025-09-08_12-46-00/offshore_well_03_porosity_calculator_output.png",
       "errorMessage": null,
-      "processingTime": null,
-      "completedAt": null,
+      "processingTime": 1406,
+      "completedAt": "2025-09-08T12:46:02.086Z",
       "id": "c815a584-c2ee-4841-adb2-d68ed2c02a1e",
       "createdAt": "2025-09-08T12:45:15.669Z"
     }
@@ -212,10 +218,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T12:44:40.596Z",
+        "lastCheck": "2025-09-08T12:47:40.596Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T12:44:40.596Z"
+      "lastCheck": "2025-09-08T12:47:40.596Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
