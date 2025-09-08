@@ -124,7 +124,7 @@ class LangchainMCPAgent:
         try:
             # Use subprocess to call the MCP tools server directly
             cmd = ["python3", os.path.join(self.mcp_servers_path, "tools_server.py"), function_name] + list(args)
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=3)
             if result.returncode == 0 and result.stdout:
                 return json.loads(result.stdout)
             return []
@@ -136,7 +136,7 @@ class LangchainMCPAgent:
         """Call a function from the MCP scripts server"""
         try:
             cmd = ["python3", os.path.join(self.mcp_servers_path, "scripts_server.py"), function_name] + list(args)
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=3)
             if result.returncode == 0 and result.stdout:
                 return json.loads(result.stdout)
             return []
@@ -148,7 +148,7 @@ class LangchainMCPAgent:
         """Call a function from the MCP resources server"""
         try:
             cmd = ["python3", os.path.join(self.mcp_servers_path, "resources_server.py"), function_name] + list(args)
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=3)
             if result.returncode == 0 and result.stdout:
                 return json.loads(result.stdout)
             return []
