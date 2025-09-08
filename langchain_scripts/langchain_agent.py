@@ -18,7 +18,7 @@ try:
     from langchain_anthropic import ChatAnthropic
     from langchain_core.messages import HumanMessage, SystemMessage
 except ImportError as e:
-    print(f"Error importing required packages: {e}")
+    print(f"Error importing required packages: {e}", file=sys.stderr)
     print("Please ensure langchain-openai, langchain-anthropic, and related packages are installed")
     sys.exit(1)
 
@@ -68,7 +68,7 @@ class LangchainMCPAgent:
             
             return True
         except Exception as e:
-            print(f"Error initializing agent: {e}")
+            print(f"Error initializing agent: {e}", file=sys.stderr)
             return False
     
     def _create_mock_model(self):
@@ -115,7 +115,7 @@ class LangchainMCPAgent:
             self.available_las_files = await self._call_mcp_resources_server('list_las_files')
             
         except Exception as e:
-            print(f"Error loading MCP server data: {e}")
+            print(f"Error loading MCP server data: {e}", file=sys.stderr)
             # Use fallback data discovery
             await self._discover_local_resources()
     
@@ -181,7 +181,7 @@ class LangchainMCPAgent:
                 {"name": "lithology_classifier", "description": "Classifies rock types"}
             ]
         except Exception as e:
-            print(f"Error discovering local resources: {e}")
+            print(f"Error discovering local resources: {e}", file=sys.stderr)
             self.available_scripts = []
             self.available_las_files = []
             self.available_tools = []
@@ -211,7 +211,7 @@ class LangchainMCPAgent:
             return await self._llm_match_tool_to_query(query)
             
         except Exception as e:
-            print(f"Error matching tool to query: {e}")
+            print(f"Error matching tool to query: {e}", file=sys.stderr)
             return await self._llm_match_tool_to_query(query)
     
     async def _llm_match_tool_to_query(self, query: str) -> Optional[Dict[str, Any]]:
@@ -257,7 +257,7 @@ If no tool is appropriate, set confidence to 0.0."""
                 return None
                 
         except Exception as e:
-            print(f"Error with LLM tool matching: {e}")
+            print(f"Error with LLM tool matching: {e}", file=sys.stderr)
             return None
     
     async def _create_execution_plan(self, query: str, tool_match: Dict[str, Any], available_files: List[str]) -> List[Dict[str, Any]]:
@@ -305,7 +305,7 @@ If no tool is appropriate, set confidence to 0.0."""
             
             return plan
         except Exception as e:
-            print(f"Error creating execution plan: {e}")
+            print(f"Error creating execution plan: {e}", file=sys.stderr)
             return []
     
     async def _generate_suggestions(self, available_tools: List[Dict[str, Any]], available_files: List[str]) -> List[str]:
@@ -333,7 +333,7 @@ If no tool is appropriate, set confidence to 0.0."""
             
             return suggestions[:5]  # Limit to 5 suggestions
         except Exception as e:
-            print(f"Error generating suggestions: {e}")
+            print(f"Error generating suggestions: {e}", file=sys.stderr)
             return ["Please try rephrasing your query"]
     
     async def check_clarification(self, query: str, llm_config: Optional[Dict] = None) -> Dict:
