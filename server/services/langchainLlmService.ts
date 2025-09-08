@@ -382,29 +382,27 @@ if __name__ == "__main__":
 
       if (result.success && result.stdout) {
         try {
-          // Extract only the JSON part from stdout (everything from first { to last })
+          // Find the last complete JSON object in stdout (ignoring error messages)
           const lines = result.stdout.split('\n');
-          let jsonLines = [];
-          let inJson = false;
-          let braceCount = 0;
+          let jsonStartIndex = -1;
+          let jsonEndIndex = -1;
           
-          for (const line of lines) {
-            if (line.trim().startsWith('{')) {
-              inJson = true;
-              braceCount = 0;
+          // Find the last occurrence of a line starting with '{'
+          for (let i = lines.length - 1; i >= 0; i--) {
+            if (lines[i].trim().startsWith('}') && jsonEndIndex === -1) {
+              jsonEndIndex = i;
             }
-            
-            if (inJson) {
-              jsonLines.push(line);
-              braceCount += (line.match(/\{/g) || []).length;
-              braceCount -= (line.match(/\}/g) || []).length;
-              
-              if (braceCount === 0) {
-                break;
-              }
+            if (lines[i].trim().startsWith('{') && jsonEndIndex !== -1) {
+              jsonStartIndex = i;
+              break;
             }
           }
           
+          if (jsonStartIndex === -1 || jsonEndIndex === -1) {
+            throw new Error('No valid JSON found in agent output');
+          }
+          
+          const jsonLines = lines.slice(jsonStartIndex, jsonEndIndex + 1);
           const jsonString = jsonLines.join('\n');
           const response = JSON.parse(jsonString);
           return response;
@@ -444,29 +442,27 @@ if __name__ == "__main__":
 
       if (result.success && result.stdout) {
         try {
-          // Extract only the JSON part from stdout (everything from first { to last })
+          // Find the last complete JSON object in stdout (ignoring error messages)
           const lines = result.stdout.split('\n');
-          let jsonLines = [];
-          let inJson = false;
-          let braceCount = 0;
+          let jsonStartIndex = -1;
+          let jsonEndIndex = -1;
           
-          for (const line of lines) {
-            if (line.trim().startsWith('{')) {
-              inJson = true;
-              braceCount = 0;
+          // Find the last occurrence of a line starting with '{'
+          for (let i = lines.length - 1; i >= 0; i--) {
+            if (lines[i].trim().startsWith('}') && jsonEndIndex === -1) {
+              jsonEndIndex = i;
             }
-            
-            if (inJson) {
-              jsonLines.push(line);
-              braceCount += (line.match(/\{/g) || []).length;
-              braceCount -= (line.match(/\}/g) || []).length;
-              
-              if (braceCount === 0) {
-                break;
-              }
+            if (lines[i].trim().startsWith('{') && jsonEndIndex !== -1) {
+              jsonStartIndex = i;
+              break;
             }
           }
           
+          if (jsonStartIndex === -1 || jsonEndIndex === -1) {
+            throw new Error('No valid JSON found in agent output');
+          }
+          
+          const jsonLines = lines.slice(jsonStartIndex, jsonEndIndex + 1);
           const jsonString = jsonLines.join('\n');
           const agentResponse = JSON.parse(jsonString);
           
