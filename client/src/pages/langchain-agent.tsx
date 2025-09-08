@@ -15,7 +15,7 @@ interface SystemStatus {
   metadata: any;
 }
 
-export default function LLMIntegrationPage() {
+export default function LangchainAgentPage() {
   const { toast } = useToast();
   const [wsConnected, setWsConnected] = useState(false);
 
@@ -29,7 +29,7 @@ export default function LLMIntegrationPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading LLM Integration...</p>
+          <p className="text-muted-foreground">Loading Langchain Agent...</p>
         </div>
       </div>
     );
@@ -47,8 +47,8 @@ export default function LLMIntegrationPage() {
         <header className="bg-card border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-foreground">LLM Integration</h2>
-              <p className="text-muted-foreground">Advanced AI analysis using Langchain and MCP protocols</p>
+              <h2 className="text-xl font-semibold text-foreground">Langchain Agent</h2>
+              <p className="text-muted-foreground">Advanced AI agent using Langchain with MCP server integration</p>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
@@ -85,7 +85,7 @@ export default function LLMIntegrationPage() {
           <div className="bg-card rounded-lg border border-border p-6">
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
               <Brain className="w-5 h-5 text-blue-500" />
-              About Langchain Integration
+              About Langchain MCP Agent
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-muted-foreground">
               <div>
