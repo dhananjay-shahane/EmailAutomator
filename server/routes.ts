@@ -411,11 +411,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Langchain AI Agent endpoints
   app.post("/api/langchain/check-clarification", async (req, res) => {
     try {
-      const { query, llmConfig } = req.body;
+      const { query } = req.body;
       
       if (!query || typeof query !== 'string') {
         return res.status(400).json({ message: "Query is required" });
       }
+
+      // Get LLM configuration from system status
+      const systemStatus = await storage.getSystemStatus();
+      const llmStatus = systemStatus.find(s => s.component === 'llm');
+      const llmConfig = llmStatus?.metadata ? {
+        provider: llmStatus.metadata.provider,
+        model: llmStatus.metadata.model,
+        endpoint: llmStatus.metadata.endpoint,
+        apiKey: llmStatus.metadata.apiKey
+      } : null;
 
       const result = await langchainLlmService.checkClarification(query, llmConfig);
       res.json(result);
@@ -434,13 +444,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/langchain/process-query", async (req, res) => {
     try {
-      const { query, llmConfig } = req.body;
+      const { query } = req.body;
       
       if (!query || typeof query !== 'string') {
         return res.status(400).json({ message: "Query is required" });
       }
 
       console.log(`Processing Langchain query: ${query}`);
+      
+      // Get LLM configuration from system status
+      const systemStatus = await storage.getSystemStatus();
+      const llmStatus = systemStatus.find(s => s.component === 'llm');
+      const llmConfig = llmStatus?.metadata ? {
+        provider: llmStatus.metadata.provider,
+        model: llmStatus.metadata.model,
+        endpoint: llmStatus.metadata.endpoint,
+        apiKey: llmStatus.metadata.apiKey
+      } : null;
       
       // Create email log entry for the Langchain query
       const emailLog = await storage.createEmailLog({
