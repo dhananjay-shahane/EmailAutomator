@@ -312,6 +312,20 @@
       "completedAt": "2025-09-08T14:45:51.485Z",
       "id": "8b8959df-4d4c-4be1-85a6-86a3dcf7b2e9",
       "createdAt": "2025-09-08T14:45:10.268Z"
+    },
+    {
+      "sender": "langchain-agent@system.local",
+      "subject": "Langchain AI Agent Processing",
+      "body": "Use create depth plot for \n    Create depth visualization plots from LAS file data\n    \n    Args:\n        las_file: Path to the LAS file to analyze\n        output_dir: Directory to save the generated plots\n        \n    Returns:\n        Dictionary containing plot information and file paths",
+      "status": "error",
+      "mcpScript": null,
+      "lasFile": "sample_well_01.las",
+      "outputFile": null,
+      "errorMessage": "Unable to determine appropriate script and tool from Langchain response",
+      "processingTime": null,
+      "completedAt": "2025-09-08T14:51:59.826Z",
+      "id": "6d77bb25-c9e5-4276-86e4-301952d0fedd",
+      "createdAt": "2025-09-08T14:50:52.073Z"
     }
   ],
   "systemStatuses": [
@@ -320,10 +334,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T14:50:16.399Z",
+        "lastCheck": "2025-09-08T14:52:16.399Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T14:50:16.399Z"
+      "lastCheck": "2025-09-08T14:52:16.399Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
