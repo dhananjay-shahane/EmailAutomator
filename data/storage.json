@@ -230,15 +230,13 @@
       "metadata": {
         "provider": "ollama",
         "model": "llama3.2:1b",
-        "endpoint": " https://bc49b6571423.ngrok-free.app",
+        "endpoint": "https://bc49b6571423.ngrok-free.app",
         "hasApiKey": false,
-        "lastConfigUpdate": "2025-09-08T12:26:01.243Z",
+        "lastConfigUpdate": "2025-09-08T12:57:26.365Z",
         "configured": true,
-        "storageLocation": "localStorage",
-        "lastTest": "2025-09-08T12:26:10.591Z",
-        "responseTime": 7.845
+        "storageLocation": "localStorage"
       },
-      "lastCheck": "2025-09-08T12:26:10.591Z"
+      "lastCheck": "2025-09-08T12:57:26.365Z"
     },
     {
       "id": "401ff8c4-e1a8-4f39-9e32-cd88c9ccb314",
