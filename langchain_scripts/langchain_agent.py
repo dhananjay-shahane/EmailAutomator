@@ -15,13 +15,16 @@ from pathlib import Path
 try:
     from langchain_mcp_adapters.client import MultiServerMCPClient
     from langchain_mcp_adapters.tools import load_mcp_tools
-    from langchain.agents import create_agent
     from langchain_openai import ChatOpenAI
     from langchain_anthropic import ChatAnthropic
     from langchain_core.messages import HumanMessage, SystemMessage
     from langchain_core.tools import Tool
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
+    
+    # For LangChain 0.3+, we'll use a simpler approach without agents
+    from langchain_core.runnables import RunnablePassthrough
+    from langchain_core.output_parsers import StrOutputParser
 except ImportError as e:
     print(f"Error importing required packages: {e}")
     print("Please ensure langchain-mcp-adapters, langchain, and related packages are installed")

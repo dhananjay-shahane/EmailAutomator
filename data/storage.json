@@ -218,10 +218,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T13:00:50.919Z",
+        "lastCheck": "2025-09-08T13:02:50.922Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T13:00:50.920Z"
+      "lastCheck": "2025-09-08T13:02:50.922Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
