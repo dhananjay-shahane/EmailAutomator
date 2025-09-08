@@ -340,6 +340,20 @@
       "completedAt": "2025-09-08T14:57:59.084Z",
       "id": "55e90514-3b44-4b30-98e9-9b146b6fbb66",
       "createdAt": "2025-09-08T14:57:15.392Z"
+    },
+    {
+      "sender": "langchain-agent@system.local",
+      "subject": "Langchain AI Agent Processing",
+      "body": "Use create depth plot for \n    Create depth visualization plots from LAS file data\n    \n    Args:\n        las_file: Path to the LAS file to analyze\n        output_dir: Directory to save the generated plots\n        \n    Returns:\n        Dictionary containing plot information and file paths",
+      "status": "error",
+      "mcpScript": "depth_plotter.py",
+      "lasFile": "sample_well_01.las",
+      "outputFile": null,
+      "errorMessage": "Script not found: depth_plotter.py",
+      "processingTime": null,
+      "completedAt": "2025-09-08T15:01:20.275Z",
+      "id": "116b0211-ac54-4863-b0bf-efadb586cd99",
+      "createdAt": "2025-09-08T15:00:37.886Z"
     }
   ],
   "systemStatuses": [
@@ -348,10 +362,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T14:59:16.404Z",
+        "lastCheck": "2025-09-08T15:01:11.247Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T14:59:16.404Z"
+      "lastCheck": "2025-09-08T15:01:11.247Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
