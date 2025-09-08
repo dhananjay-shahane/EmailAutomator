@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { EmailService } from "./services/emailService";
 import { LLMService } from "./services/llmService";
+import { langchainLlmService } from "./services/langchainLlmService";
 import { MCPService } from "./services/mcpService";
 import { WebSocketServer } from 'ws';
 import { insertEmailLogSchema } from "@shared/schema";
@@ -404,6 +405,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       res.status(500).json({ message: "Failed to process query" });
+    }
+  });
+
+  // Langchain AI Agent endpoints
+  app.post("/api/langchain/check-clarification", async (req, res) => {
+    try {
+      const { query, llmConfig } = req.body;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: "Query is required" });
+      }
+
+      const result = await langchainLlmService.checkClarification(query, llmConfig);
+      res.json(result);
+      
+    } catch (error) {
+      console.error('Langchain clarification error:', error);
+      res.status(500).json({
+        needsClarification: true,
+        confidence: 0.0,
+        suggestions: ["Please try rephrasing your query"],
+        message: "Langchain agent is currently unavailable",
+        agentPlan: null
+      });
+    }
+  });
+
+  app.post("/api/langchain/process-query", async (req, res) => {
+    try {
+      const { query, llmConfig } = req.body;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: "Query is required" });
+      }
+
+      console.log(`Processing Langchain query: ${query}`);
+      
+      // Create email log entry for the Langchain query
+      const emailLog = await storage.createEmailLog({
+        sender: "langchain-agent@system.local",
+        subject: "Langchain AI Agent Processing",
+        body: query,
+        status: 'processing',
+        llmResponse: null,
+        mcpScript: null,
+        lasFile: null,
+        outputFile: null,
+        errorMessage: null,
+        processingTime: null,
+        completedAt: null,
+      });
+
+      broadcast({ type: 'new_email', emailLog });
+
+      try {
+        console.log(`Analyzing query with Langchain agent...`);
+        
+        const langchainResult = await langchainLlmService.processQuery(query, llmConfig);
+        
+        await storage.updateEmailLog(emailLog.id, {
+          llmResponse: langchainResult.agentResponse.finalResult,
+          mcpScript: langchainResult.agentResponse.finalResult.script,
+          lasFile: langchainResult.agentResponse.finalResult.lasFile,
+        });
+
+        // Process with MCP using the final result from Langchain agent
+        console.log(`Processing LAS file via Langchain: ${langchainResult.agentResponse.finalResult.lasFile} with script: ${langchainResult.agentResponse.finalResult.script}`);
+        const mcpResult = await mcpService.processLASFile(
+          langchainResult.agentResponse.finalResult.lasFile,
+          langchainResult.agentResponse.finalResult.script,
+          langchainResult.agentResponse.finalResult.tool
+        );
+
+        if (mcpResult.success && mcpResult.outputPath) {
+          await storage.updateEmailLog(emailLog.id, {
+            status: 'completed',
+            outputFile: mcpResult.outputPath,
+            processingTime: mcpResult.processingTime,
+            completedAt: new Date(),
+          });
+
+          console.log(`Langchain query processed successfully`);
+          
+          const updatedLog = await storage.getEmailLog(emailLog.id);
+          broadcast({ type: 'email_processed', emailLog: updatedLog });
+
+          res.json({
+            id: emailLog.id,
+            query: query,
+            agentResponse: langchainResult.agentResponse,
+            outputFile: mcpResult.outputPath,
+            status: 'completed',
+            processingTime: mcpResult.processingTime,
+          });
+        } else {
+          throw new Error(mcpResult.error || 'MCP processing failed');
+        }
+
+      } catch (processingError) {
+        console.error('Langchain query processing error:', processingError);
+        
+        await storage.updateEmailLog(emailLog.id, {
+          status: 'error',
+          errorMessage: processingError instanceof Error ? processingError.message : 'Unknown error',
+          completedAt: new Date(),
+        });
+
+        const updatedLog = await storage.getEmailLog(emailLog.id);
+        broadcast({ type: 'email_processed', emailLog: updatedLog });
+
+        res.status(500).json({
+          id: emailLog.id,
+          query: query,
+          agentResponse: null,
+          status: 'error',
+          errorMessage: processingError instanceof Error ? processingError.message : 'Unknown error',
+        });
+      }
+
+    } catch (error) {
+      res.status(500).json({ message: "Failed to process Langchain query" });
     }
   });
 
