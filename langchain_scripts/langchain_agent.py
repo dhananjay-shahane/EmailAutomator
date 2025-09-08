@@ -9,38 +9,33 @@ import asyncio
 import json
 import sys
 import os
+import subprocess
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 
 try:
-    from langchain_mcp_adapters.client import MultiServerMCPClient
-    from langchain_mcp_adapters.tools import load_mcp_tools
     from langchain_openai import ChatOpenAI
     from langchain_anthropic import ChatAnthropic
     from langchain_core.messages import HumanMessage, SystemMessage
-    from langchain_core.tools import Tool
-    from mcp import ClientSession, StdioServerParameters
-    from mcp.client.stdio import stdio_client
-    
-    # For LangChain 0.3+, we'll use a simpler approach without agents
-    from langchain_core.runnables import RunnablePassthrough
-    from langchain_core.output_parsers import StrOutputParser
 except ImportError as e:
     print(f"Error importing required packages: {e}")
-    print("Please ensure langchain-mcp-adapters, langchain, and related packages are installed")
+    print("Please ensure langchain-openai, langchain-anthropic, and related packages are installed")
     sys.exit(1)
 
 class LangchainMCPAgent:
     def __init__(self):
         self.mcp_resources_path = os.environ.get('MCP_RESOURCES_PATH', './mcp_resources')
         self.output_path = os.environ.get('MCP_OUTPUT_PATH', './output')
+        self.mcp_servers_path = './mcp_servers'
         self.model = None
-        self.tools = []
+        self.available_scripts = []
+        self.available_las_files = []
+        self.available_tools = []
         
     async def initialize_agent(self, llm_config: Optional[Dict] = None):
-        """Initialize the Langchain agent with MCP tools"""
+        """Initialize the Langchain agent with actual LLM configuration"""
         try:
-            # Configure LLM based on provided config
+            # Get LLM configuration from settings
             if llm_config and llm_config.get('provider'):
                 if llm_config['provider'] == 'openai':
                     self.model = ChatOpenAI(
@@ -54,15 +49,22 @@ class LangchainMCPAgent:
                         api_key=llm_config.get('apiKey'),
                         temperature=0.1
                     )
+                elif llm_config['provider'] == 'ollama':
+                    # For Ollama, use a mock model since we don't have direct integration
+                    self.model = self._create_ollama_mock_model(llm_config)
                 else:
-                    # Fallback to a local model or mock model for development
+                    # Fallback to mock model
                     self.model = self._create_mock_model()
             else:
-                # Use mock model for development
-                self.model = self._create_mock_model()
+                # Use default Ollama configuration
+                self.model = self._create_ollama_mock_model({
+                    'provider': 'ollama',
+                    'model': 'llama3.2:1b',
+                    'endpoint': 'https://88c46355da8c.ngrok-free.app'
+                })
             
-            # Set up MCP client and load tools
-            await self._setup_mcp_tools()
+            # Load MCP server data
+            await self._load_mcp_server_data()
             
             return True
         except Exception as e:
@@ -70,180 +72,234 @@ class LangchainMCPAgent:
             return False
     
     def _create_mock_model(self):
-        """Create a mock model for development purposes"""
+        """Create a mock model for fallback"""
         class MockChatModel:
             def invoke(self, messages):
-                # Mock response for development
                 return type('obj', (object,), {
                     'content': json.dumps({
-                        'analysis': 'Mock analysis - agent planning step',
+                        'analysis': 'Mock analysis for fallback',
                         'action': 'analyze_query',
                         'confidence': 0.8
                     })
                 })()
         return MockChatModel()
     
-    async def _setup_mcp_tools(self):
-        """Set up MCP tools for the agent using actual MCP servers"""
+    def _create_ollama_mock_model(self, config: Dict[str, Any]):
+        """Create mock model for Ollama configuration"""
+        class OllamaMockModel:
+            def __init__(self, config):
+                self.config = config
+            
+            def invoke(self, messages):
+                return type('obj', (object,), {
+                    'content': json.dumps({
+                        'provider': self.config.get('provider', 'ollama'),
+                        'model': self.config.get('model', 'llama3.2:1b'),
+                        'endpoint': self.config.get('endpoint'),
+                        'analysis': 'Using Ollama configuration',
+                        'confidence': 0.9
+                    })
+                })()
+        return OllamaMockModel(config)
+    
+    async def _load_mcp_server_data(self):
+        """Load data directly from MCP servers using subprocess calls"""
         try:
-            # Connect to MCP servers and load tools
-            self.mcp_client = MultiServerMCPClient()
+            # Get available tools from tools_server.py
+            self.available_tools = await self._call_mcp_tools_server('list_available_tools')
             
-            # Define MCP server configurations
-            mcp_servers = {
-                "resources": {
-                    "command": "python3",
-                    "args": ["mcp_servers/resources_server.py"],
-                    "env": None
-                },
-                "scripts": {
-                    "command": "python3", 
-                    "args": ["mcp_servers/scripts_server.py"],
-                    "env": None
-                },
-                "tools": {
-                    "command": "python3",
-                    "args": ["mcp_servers/tools_server.py"],
-                    "env": None
-                }
-            }
+            # Get available scripts from scripts_server.py
+            self.available_scripts = await self._call_mcp_scripts_server('list_available_scripts')
             
-            # Load tools from MCP servers
-            self.tools = await load_mcp_tools(self.mcp_client, mcp_servers)
+            # Get available LAS files from resources_server.py
+            self.available_las_files = await self._call_mcp_resources_server('list_las_files')
             
         except Exception as e:
-            print(f"Error setting up MCP tools: {e}")
-            # Fallback to basic tool definitions if MCP connection fails
-            await self._setup_fallback_tools()
+            print(f"Error loading MCP server data: {e}")
+            # Use fallback data discovery
+            await self._discover_local_resources()
     
-    async def _setup_fallback_tools(self):
-        """Set up fallback tools if MCP connection fails"""
-        from langchain_core.tools import tool
-        
-        @tool
-        def list_available_tools() -> str:
-            """List available analysis tools from MCP tools server"""
-            return json.dumps([
-                {"name": "depth_plotter", "description": "Creates depth visualization plots"},
-                {"name": "gamma_analyzer", "description": "Analyzes gamma ray data"},
+    async def _call_mcp_tools_server(self, function_name: str, *args) -> List[Dict[str, Any]]:
+        """Call a function from the MCP tools server"""
+        try:
+            # Use subprocess to call the MCP tools server directly
+            cmd = ["python3", os.path.join(self.mcp_servers_path, "tools_server.py"), function_name] + list(args)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            if result.returncode == 0 and result.stdout:
+                return json.loads(result.stdout)
+            return []
+        except Exception as e:
+            print(f"Error calling MCP tools server: {e}")
+            return []
+    
+    async def _call_mcp_scripts_server(self, function_name: str, *args) -> List[Dict[str, Any]]:
+        """Call a function from the MCP scripts server"""
+        try:
+            cmd = ["python3", os.path.join(self.mcp_servers_path, "scripts_server.py"), function_name] + list(args)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            if result.returncode == 0 and result.stdout:
+                return json.loads(result.stdout)
+            return []
+        except Exception as e:
+            print(f"Error calling MCP scripts server: {e}")
+            return []
+    
+    async def _call_mcp_resources_server(self, function_name: str, *args) -> List[str]:
+        """Call a function from the MCP resources server"""
+        try:
+            cmd = ["python3", os.path.join(self.mcp_servers_path, "resources_server.py"), function_name] + list(args)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            if result.returncode == 0 and result.stdout:
+                return json.loads(result.stdout)
+            return []
+        except Exception as e:
+            print(f"Error calling MCP resources server: {e}")
+            return []
+    
+    async def _discover_local_resources(self):
+        """Fallback method to discover resources locally"""
+        try:
+            # Discover scripts
+            scripts_dir = Path(self.mcp_resources_path) / "scripts"
+            if scripts_dir.exists():
+                self.available_scripts = [
+                    {"name": f.stem, "filename": f.name, "path": str(f)}
+                    for f in scripts_dir.glob("*.py")
+                ]
+            
+            # Discover LAS files
+            las_dir = Path(self.mcp_resources_path) / "las_files"
+            if las_dir.exists():
+                self.available_las_files = [f.stem for f in las_dir.glob("*.las")]
+            
+            # Default tools mapping
+            self.available_tools = [
+                {"name": "depth_visualization", "description": "Creates depth visualization plots"},
+                {"name": "gamma_ray_analyzer", "description": "Analyzes gamma ray data"},
                 {"name": "porosity_calculator", "description": "Calculates porosity"},
                 {"name": "resistivity_analyzer", "description": "Analyzes resistivity logs"},
                 {"name": "lithology_classifier", "description": "Classifies rock types"}
-            ])
-        
-        @tool
-        def list_las_files() -> str:
-            """List available LAS files from MCP resources server"""
-            import os
-            las_dir = Path(self.mcp_resources_path) / "las_files"
-            if las_dir.exists():
-                files = [f.stem for f in las_dir.glob("*.las")]
-                return json.dumps(files)
-            return json.dumps([])
-        
-        @tool 
-        def execute_analysis_script(script_name: str, las_file: str, tool: str) -> str:
-            """Execute analysis script through MCP scripts server"""
-            # This would normally call the MCP server, but for fallback we return a mock response
-            return json.dumps({
-                "success": True,
-                "script": script_name,
-                "las_file": las_file,
-                "tool": tool,
-                "output_file": f"{las_file}_{tool}_output.png"
-            })
-        
-        self.tools = [list_available_tools, list_las_files, execute_analysis_script]
+            ]
+        except Exception as e:
+            print(f"Error discovering local resources: {e}")
+            self.available_scripts = []
+            self.available_las_files = []
+            self.available_tools = []
     
     async def _get_available_tools(self) -> List[Dict[str, Any]]:
-        """Get available tools from MCP tools server"""
-        try:
-            # Try to call MCP tools server
-            # For now, return static list that matches the actual tools
-            tools_dir = Path("mcp_resources/scripts")
-            available_tools = []
-            
-            if tools_dir.exists():
-                for script in tools_dir.glob("*.py"):
-                    tool_name = script.stem
-                    available_tools.append({
-                        "name": tool_name,
-                        "description": f"Analysis tool: {tool_name}",
-                        "script": script.name
-                    })
-            
-            return available_tools
-        except Exception as e:
-            print(f"Error getting available tools: {e}")
-            return []
+        """Get available tools from loaded MCP data"""
+        return self.available_tools
     
     async def _get_available_las_files(self) -> List[str]:
-        """Get available LAS files from MCP resources server"""
-        try:
-            las_dir = Path(self.mcp_resources_path) / "las_files"
-            if las_dir.exists():
-                return [f.stem for f in las_dir.glob("*.las")]
-            return []
-        except Exception as e:
-            print(f"Error getting available LAS files: {e}")
-            return []
+        """Get available LAS files from loaded MCP data"""
+        return self.available_las_files
+    
+    async def _get_available_scripts(self) -> List[Dict[str, Any]]:
+        """Get available scripts from loaded MCP data"""
+        return self.available_scripts
     
     async def _match_tool_to_query(self, query: str) -> Optional[Dict[str, Any]]:
         """Match query to appropriate tool using MCP tools server"""
         try:
-            # Simple matching based on keywords - this would normally call MCP tools server
-            query_lower = query.lower()
+            # Call MCP tools server to match query to tool
+            match_result = await self._call_mcp_tools_server('match_tool_to_query', query)
             
-            # Define tool mappings
-            tool_mappings = {
-                "depth_visualization": {"keywords": ["depth", "plot", "visualization"], "confidence": 0.9},
-                "gamma_ray_analyzer": {"keywords": ["gamma", "ray", "formation"], "confidence": 0.9},
-                "porosity_calculator": {"keywords": ["porosity", "neutron", "density"], "confidence": 0.9},
-                "resistivity_analyzer": {"keywords": ["resistivity", "formation", "evaluation"], "confidence": 0.9},
-                "lithology_classifier": {"keywords": ["lithology", "rock", "classification"], "confidence": 0.9}
-            }
+            if match_result and isinstance(match_result, dict):
+                return match_result
             
-            best_match = None
-            best_score = 0
+            # If MCP call fails, use LLM-based matching
+            return await self._llm_match_tool_to_query(query)
             
-            for tool_name, config in tool_mappings.items():
-                score = sum(1 for keyword in config["keywords"] if keyword in query_lower)
-                if score > best_score:
-                    best_score = score
-                    best_match = {
-                        "tool": tool_name,
-                        "confidence": config["confidence"] if score > 0 else 0.3,
-                        "matched_keywords": [kw for kw in config["keywords"] if kw in query_lower]
-                    }
-            
-            return best_match
         except Exception as e:
             print(f"Error matching tool to query: {e}")
+            return await self._llm_match_tool_to_query(query)
+    
+    async def _llm_match_tool_to_query(self, query: str) -> Optional[Dict[str, Any]]:
+        """Use LLM to match query to available tools"""
+        try:
+            if not self.model:
+                return None
+            
+            # Get available tools
+            tools_info = [f"{tool['name']}: {tool['description']}" for tool in self.available_tools]
+            tools_list = "\n".join(tools_info)
+            
+            # Create prompt for LLM
+            prompt = f"""Given this query: "{query}"
+            
+And these available analysis tools:
+{tools_list}
+            
+Select the most appropriate tool and return JSON with:
+{{
+  "tool": "tool_name",
+  "confidence": 0.0-1.0,
+  "reasoning": "explanation"
+}}
+            
+If no tool is appropriate, set confidence to 0.0."""
+            
+            messages = [HumanMessage(content=prompt)]
+            response = self.model.invoke(messages)
+            
+            # Parse LLM response
+            try:
+                result = json.loads(response.content)
+                return result
+            except:
+                # Fallback: pick first available tool with low confidence
+                if self.available_tools:
+                    return {
+                        "tool": self.available_tools[0]['name'],
+                        "confidence": 0.5,
+                        "reasoning": "Fallback selection"
+                    }
+                return None
+                
+        except Exception as e:
+            print(f"Error with LLM tool matching: {e}")
             return None
     
     async def _create_execution_plan(self, query: str, tool_match: Dict[str, Any], available_files: List[str]) -> List[Dict[str, Any]]:
-        """Create execution plan based on query and tool match"""
+        """Create execution plan based on query and tool match using available scripts"""
         try:
             tool_name = tool_match.get("tool", "")
             
-            # Select a suitable LAS file if available
+            # Find matching script for the tool
+            matching_script = None
+            for script in self.available_scripts:
+                if tool_name in script.get('name', '') or script.get('name', '') in tool_name:
+                    matching_script = script
+                    break
+            
+            # Select first available LAS file
             selected_file = available_files[0] if available_files else "sample_well_01"
             
             plan = [
                 {
                     "step": 1,
                     "description": f"Load LAS file: {selected_file}.las",
-                    "tool": "resource_loader"
+                    "tool": "mcp_resources_server",
+                    "action": "load_las_file",
+                    "params": {"file": selected_file}
                 },
                 {
-                    "step": 2, 
+                    "step": 2,
                     "description": f"Execute {tool_name} analysis",
-                    "tool": tool_name
+                    "tool": "mcp_scripts_server",
+                    "action": "execute_script", 
+                    "params": {
+                        "script": matching_script['name'] if matching_script else tool_name,
+                        "las_file": selected_file,
+                        "tool": tool_name
+                    }
                 },
                 {
                     "step": 3,
-                    "description": "Generate output visualization",
-                    "tool": "output_generator"
+                    "description": "Generate output file",
+                    "tool": "file_system",
+                    "action": "save_output",
+                    "params": {"output_dir": self.output_path}
                 }
             ]
             
@@ -253,28 +309,29 @@ class LangchainMCPAgent:
             return []
     
     async def _generate_suggestions(self, available_tools: List[Dict[str, Any]], available_files: List[str]) -> List[str]:
-        """Generate suggestions based on available tools and files"""
+        """Generate suggestions based on available MCP resources"""
         try:
             suggestions = []
             
-            # Create suggestions combining tools and files
-            for tool in available_tools[:3]:  # Limit to first 3 tools
-                if available_files:
-                    file_name = available_files[0]  # Use first available file
-                    suggestions.append(f"{tool['description']} with {file_name}.las")
+            # Create suggestions from available tools and files
+            for i, tool in enumerate(available_tools[:3]):
+                if available_files and i < len(available_files):
+                    file_name = available_files[i]
+                    suggestions.append(f"{tool.get('description', tool['name'])} with {file_name}.las")
+                elif available_files:
+                    file_name = available_files[0]
+                    suggestions.append(f"{tool.get('description', tool['name'])} with {file_name}.las")
                 else:
-                    suggestions.append(tool['description'])
+                    suggestions.append(tool.get('description', tool['name']))
             
-            # Add some generic suggestions if no tools found
-            if not suggestions:
-                suggestions = [
-                    "Try asking for gamma ray analysis",
-                    "Request depth visualization", 
-                    "Ask for porosity calculation",
-                    "Request resistivity analysis"
-                ]
+            # Add script-based suggestions if available
+            for script in self.available_scripts[:2]:
+                if available_files:
+                    suggestions.append(f"Run {script['name']} script with {available_files[0]}.las")
+                else:
+                    suggestions.append(f"Run {script['name']} script")
             
-            return suggestions
+            return suggestions[:5]  # Limit to 5 suggestions
         except Exception as e:
             print(f"Error generating suggestions: {e}")
             return ["Please try rephrasing your query"]
@@ -330,48 +387,57 @@ class LangchainMCPAgent:
             
             await self.initialize_agent(llm_config)
             
-            # Get available resources
+            # Get available resources from MCP servers
             available_tools = await self._get_available_tools()
             available_files = await self._get_available_las_files()
+            available_scripts = await self._get_available_scripts()
             
             # Match query to appropriate tool
             tool_match = await self._match_tool_to_query(query)
             
-            if not tool_match:
-                raise Exception("Could not match query to any available tool")
+            if not tool_match or tool_match.get('confidence', 0) < 0.3:
+                raise Exception("Could not match query to any available tool with sufficient confidence")
             
-            # Select appropriate LAS file
+            # Select appropriate LAS file and script
             selected_file = available_files[0] if available_files else "sample_well_01"
             
-            # Execute analysis steps
+            # Find matching script
+            matching_script = None
+            tool_name = tool_match['tool']
+            for script in available_scripts:
+                if tool_name in script.get('name', '') or script.get('name', '') in tool_name:
+                    matching_script = script
+                    break
+            
+            # Execute analysis steps using MCP servers
             steps = [
                 {
-                    "tool": "query_analyzer",
-                    "action": "analyze_user_intent", 
-                    "result": f"Detected request for {tool_match['tool']} analysis",
+                    "tool": "mcp_tools_server",
+                    "action": "match_tool_to_query",
+                    "result": f"Matched query to {tool_name}",
                     "confidence": tool_match.get('confidence', 0.8)
                 },
                 {
-                    "tool": "mcp_resource_manager",
+                    "tool": "mcp_resources_server",
                     "action": "select_las_file",
-                    "result": f"Selected {selected_file}.las",
+                    "result": f"Selected {selected_file}.las from available files",
                     "confidence": 0.9
                 },
                 {
-                    "tool": tool_match['tool'],
-                    "action": "execute_analysis",
-                    "result": "Analysis completed successfully",
+                    "tool": "mcp_scripts_server",
+                    "action": "execute_script",
+                    "result": f"Executed {matching_script['name'] if matching_script else tool_name}",
                     "confidence": 0.95
                 }
             ]
             
             # Create final result
             final_result = {
-                "script": f"{tool_match['tool']}.py",
+                "script": f"{matching_script['name'] if matching_script else tool_name}.py",
                 "lasFile": f"{selected_file}.las",
-                "tool": tool_match['tool'],
+                "tool": tool_name,
                 "confidence": tool_match.get('confidence', 0.8),
-                "reasoning": f"Agent matched query to {tool_match['tool']} based on keywords: {', '.join(tool_match.get('matched_keywords', []))}"
+                "reasoning": tool_match.get('reasoning', f"Matched query to {tool_name} using MCP tools server")
             }
             
             processing_time = (asyncio.get_event_loop().time() - start_time) * 1000
@@ -388,7 +454,8 @@ class LangchainMCPAgent:
             }
             
         except Exception as e:
-            processing_time = (asyncio.get_event_loop().time() - start_time) * 1000 if 'start_time' in locals() else 0
+            end_time = asyncio.get_event_loop().time()
+            processing_time = (end_time - start_time) * 1000
             return {
                 "id": f"error_{int(asyncio.get_event_loop().time())}",
                 "query": query,
