@@ -10,7 +10,7 @@ interface NavItem {
 const navigation: NavItem[] = [
   { name: 'Dashboard', icon: BarChart3, href: '/' },
   { name: 'Email Monitor', icon: Mail, href: '#' },
-  { name: 'LLM Integration', icon: MessageSquare, href: '#' },
+  { name: 'LLM Integration', icon: MessageSquare, href: '/llm-integration' },
   { name: 'MCP Server', icon: Server, href: '#' },
   { name: 'LAS Files', icon: FileCode, href: '#' },
   { name: 'Processing Logs', icon: History, href: '#' },
