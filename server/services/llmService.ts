@@ -198,11 +198,25 @@ Respond only with valid JSON:`;
       this.useDefaults();
     }
 
-    const prompt = `Analyze this LAS analysis query and determine if it needs clarification:
+    const prompt = `Analyze this query to determine if the user wants LAS file analysis or just general conversation:
 
 Query: "${query}"
 
-Available options:
+FIRST: Check if this is actually a request for LAS file analysis or just general conversation/greeting.
+
+Common greetings/general queries that DON'T need LAS analysis:
+- "hi", "hello", "hey", "greetings"
+- "how are you", "what's up", "good morning"
+- "thank you", "thanks", "goodbye", "bye"
+- General questions about the system
+- Test messages or simple words
+
+LAS analysis keywords that DO need processing:
+- "gamma ray", "resistivity", "porosity", "lithology", "depth"
+- "analysis", "analyze", "plot", "visualization", "calculate"
+- "LAS file", "well data", "log", "formation"
+
+Available LAS analysis options:
 - "depth visualization" using depth_visualization.py with sample_well_01.las
 - "gamma ray analysis" using gamma_ray_analyzer.py with production_well_02.las
 - "resistivity analysis" using resistivity_analyzer.py with exploration_well_04.las
@@ -210,12 +224,20 @@ Available options:
 - "lithology classification" using lithology_classifier.py with development_well_05.las
 
 Respond with JSON containing:
-- needsClarification: true if query is unclear or ambiguous
+- needsClarification: true if query needs clarification OR is just a greeting/general conversation
 - confidence: 0.0-1.0 confidence in understanding the request
-- suggestions: array of clarification options if needed
+- suggestions: array of clarification options if needed (empty for greetings)
 - message: helpful response message
 
-Example responses:
+Example responses for greetings:
+{
+  "needsClarification": true,
+  "confidence": 0.9,
+  "suggestions": [],
+  "message": "Hello! I'm here to help with LAS file analysis. You can ask me to analyze gamma rays, resistivity, porosity, lithology, or create depth visualizations."
+}
+
+Example for clear analysis request:
 {
   "needsClarification": false,
   "confidence": 0.9,
@@ -223,6 +245,7 @@ Example responses:
   "message": "I understand you want gamma ray analysis. Let me process that."
 }
 
+Example for unclear analysis request:
 {
   "needsClarification": true,
   "confidence": 0.3,
