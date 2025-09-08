@@ -48,7 +48,7 @@ export class LangchainLlmService {
   private outputPath: string;
 
   constructor() {
-    this.pythonPath = "uv";
+    this.pythonPath = "python3";
     this.mcpServersPath = process.env.MCP_SERVERS_PATH || "./mcp_servers";
     this.outputPath = process.env.MCP_OUTPUT_PATH || "./output";
     
@@ -370,12 +370,11 @@ if __name__ == "__main__":
     }
   ): Promise<LangchainClarificationResponse> {
     try {
-      const agentScriptPath = path.join(this.mcpServersPath, "langchain_agent.py");
+      const agentScriptPath = path.join("langchain_scripts", "langchain_agent.py");
       const configJson = config ? JSON.stringify(config) : '{}';
       
       const result = await this.executeScript([
-        "run",
-        agentScriptPath,
+        "langchain_scripts/langchain_agent.py",
         "check_clarification",
         query,
         configJson
@@ -408,12 +407,11 @@ if __name__ == "__main__":
     }
   ): Promise<LangchainQueryResult> {
     try {
-      const agentScriptPath = path.join(this.mcpServersPath, "langchain_agent.py");
+      const agentScriptPath = path.join("langchain_scripts", "langchain_agent.py");
       const configJson = config ? JSON.stringify(config) : '{}';
       
       const result = await this.executeScript([
-        "run", 
-        agentScriptPath,
+        "langchain_scripts/langchain_agent.py",
         "process_query",
         query,
         configJson
@@ -480,9 +478,17 @@ if __name__ == "__main__":
     return new Promise((resolve) => {
       const startTime = Date.now();
       
+      // Set PYTHONPATH to include the langchain_scripts directory
+      const env = {
+        ...process.env,
+        PYTHONPATH: `${process.cwd()}/langchain_scripts:${process.env.PYTHONPATH || ''}`,
+        PATH: `/home/runner/workspace/.pythonlibs/bin:${process.env.PATH || ''}`,
+      };
+      
       const child = spawn(this.pythonPath, args, {
         cwd: process.cwd(),
         stdio: ['pipe', 'pipe', 'pipe'],
+        env,
       });
 
       let stdout = '';
@@ -498,6 +504,10 @@ if __name__ == "__main__":
 
       child.on('close', (code) => {
         const processingTime = Date.now() - startTime;
+        
+        console.log(`Langchain script execution: exit code ${code}`);
+        console.log(`Langchain script stdout:`, stdout);
+        console.log(`Langchain script stderr:`, stderr);
         
         if (code === 0) {
           resolve({
