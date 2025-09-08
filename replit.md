@@ -41,9 +41,11 @@ Preferred communication style: Simple, everyday language.
 
 ### AI/LLM Integration
 - **LLM Service**: Ollama integration (llama3.2:1b model) via HTTP API
-- **Intent Detection**: AI-powered analysis of email content to determine required scripts and tools
+- **Langchain AI Agent Service**: Advanced AI agent using Langchain framework with MCP server integration
+- **Intent Detection**: AI-powered analysis of email content and user queries to determine required scripts and tools
 - **Confidence Scoring**: LLM provides confidence ratings for processing decisions
 - **Structured Responses**: JSON-formatted LLM outputs for reliable parsing
+- **Multi-step Agent Processing**: Langchain agents can perform complex multi-step reasoning and tool selection
 
 ### MCP (Model Context Protocol) Integration
 - **Resource Management**: Dynamic loading and management of LAS files, scripts, and tools
@@ -79,6 +81,10 @@ Preferred communication style: Simple, everyday language.
 ### AI/ML Integration
 - **axios**: HTTP client for LLM API communication
 - **ollama**: Local LLM inference engine (external service)
+- **langchain**: Framework for developing applications with language models
+- **langchain-mcp-adapters**: Model Context Protocol adapters for Langchain integration
+- **langchain-openai**: OpenAI integration for Langchain
+- **langchain-anthropic**: Anthropic Claude integration for Langchain
 
 ### Development and Build Tools
 - **typescript**: Static type checking and enhanced development experience
