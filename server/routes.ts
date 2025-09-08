@@ -502,20 +502,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let toolName = null;
         let lasFileName = null;
         
-        // Look for depth plotter references
-        if (content.toLowerCase().includes('depth') || toolsUsed.some(tool => tool.includes('depth'))) {
+        // Debug log to see what we're working with
+        console.log('Query:', query);
+        console.log('Content:', content.substring(0, 200) + '...');
+        console.log('Tools used:', toolsUsed);
+        
+        // Look for depth plotter references - improved detection
+        const queryLower = query.toLowerCase();
+        const contentLower = content.toLowerCase();
+        
+        if (queryLower.includes('depth') || contentLower.includes('depth') || 
+            toolsUsed.some((tool: string) => tool.toLowerCase().includes('depth'))) {
           scriptName = 'depth_plotter.py';
           toolName = 'depth_plotter';
+          console.log('Detected depth plotting request');
         }
         // Look for gamma ray references
-        else if (content.toLowerCase().includes('gamma') || toolsUsed.some(tool => tool.includes('gamma'))) {
+        else if (queryLower.includes('gamma') || contentLower.includes('gamma') || 
+                 toolsUsed.some((tool: string) => tool.toLowerCase().includes('gamma'))) {
           scriptName = 'gamma_ray_analyzer.py';
           toolName = 'gamma_analyzer';
+          console.log('Detected gamma ray analysis request');
         }
         // Look for porosity references
-        else if (content.toLowerCase().includes('porosity') || toolsUsed.some(tool => tool.includes('porosity'))) {
+        else if (queryLower.includes('porosity') || contentLower.includes('porosity') || 
+                 toolsUsed.some((tool: string) => tool.toLowerCase().includes('porosity'))) {
           scriptName = 'porosity_calculator.py';
           toolName = 'porosity_calculator';
+          console.log('Detected porosity calculation request');
         }
         
         // Default to the first available LAS file if not specified
