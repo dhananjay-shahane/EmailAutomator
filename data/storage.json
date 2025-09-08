@@ -174,11 +174,12 @@
     {
       "id": "5df9bc63-f26a-4554-97ac-09c06af2a984",
       "component": "email_monitor",
-      "status": "offline",
+      "status": "online",
       "metadata": {
-        "lastTest": "2025-09-08T12:26:10.588Z"
+        "lastCheck": "2025-09-08T12:27:10.104Z",
+        "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T12:26:10.588Z"
+      "lastCheck": "2025-09-08T12:27:10.104Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
