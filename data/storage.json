@@ -368,6 +368,20 @@
       "completedAt": "2025-09-08T15:04:46.062Z",
       "id": "1ce827bc-baf2-4a9c-a02b-49a4a0cbc0ff",
       "createdAt": "2025-09-08T15:04:07.461Z"
+    },
+    {
+      "sender": "langchain-agent@system.local",
+      "subject": "Langchain AI Agent Processing",
+      "body": "Create a depth plot from the LAS file data",
+      "status": "completed",
+      "mcpScript": "depth_visualization.py",
+      "lasFile": "sample_well_01.las",
+      "outputFile": "output/2025-09-08_15-12-18/sample_well_01_depth_plotter_output.png",
+      "errorMessage": null,
+      "processingTime": 1526,
+      "completedAt": "2025-09-08T15:12:20.012Z",
+      "id": "3a25eb02-2517-47d1-91a8-09eb0f1ba38f",
+      "createdAt": "2025-09-08T15:11:11.188Z"
     }
   ],
   "systemStatuses": [
@@ -376,34 +390,36 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T15:10:11.252Z",
+        "lastCheck": "2025-09-08T15:12:48.781Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T15:10:11.252Z"
+      "lastCheck": "2025-09-08T15:12:48.781Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
       "component": "llm",
-      "status": "offline",
+      "status": "online",
       "metadata": {
         "provider": "ollama",
         "model": "llama3.2:1b",
         "endpoint": "https://bc49b6571423.ngrok-free.app",
         "hasApiKey": false,
-        "lastConfigUpdate": "2025-09-08T14:47:13.523Z",
+        "lastConfigUpdate": "2025-09-08T15:11:26.045Z",
         "configured": true,
-        "storageLocation": "localStorage"
+        "storageLocation": "localStorage",
+        "lastTest": "2025-09-08T15:11:48.460Z",
+        "responseTime": 3.494
       },
-      "lastCheck": "2025-09-08T14:47:13.523Z"
+      "lastCheck": "2025-09-08T15:11:48.460Z"
     },
     {
       "id": "401ff8c4-e1a8-4f39-9e32-cd88c9ccb314",
       "component": "mcp_server",
       "status": "online",
       "metadata": {
-        "lastTest": "2025-09-08T14:47:11.329Z"
+        "lastTest": "2025-09-08T15:11:48.470Z"
       },
-      "lastCheck": "2025-09-08T14:47:11.329Z"
+      "lastCheck": "2025-09-08T15:11:48.470Z"
     }
   ]
 }
