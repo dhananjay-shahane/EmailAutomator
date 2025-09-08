@@ -213,18 +213,7 @@ Respond only with valid JSON:`;
       }
     } catch (error) {
       console.error("LLM service error:", error);
-
-      // Use MCP resource service as intelligent fallback
-      console.log("LLM unavailable, using MCP resource service fallback...");
-      const fallbackResult = await mcpResourceService.findBestMatch(emailBody);
-
-      return {
-        script: fallbackResult.script,
-        lasFile: fallbackResult.lasFile,
-        tool: fallbackResult.tool,
-        confidence: 0.7, // Lower confidence since we're using fallback
-        reasoning: `${fallbackResult.reasoning} (LLM unavailable, used resource matching)`,
-      };
+      throw new Error("LLM service unavailable: " + (error instanceof Error ? error.message : 'Unknown error'));
     }
   }
 

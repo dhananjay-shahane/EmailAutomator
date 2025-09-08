@@ -511,25 +511,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const queryLower = query.toLowerCase();
         const contentLower = content.toLowerCase();
         
-        if (queryLower.includes('depth') || contentLower.includes('depth') || 
-            toolsUsed.some((tool: string) => tool.toLowerCase().includes('depth'))) {
-          scriptName = 'depth_plotter.py';
-          toolName = 'depth_plotter';
-          console.log('Detected depth plotting request');
+        // Direct mapping from MCP tool names to scripts
+        const toolMappings = {
+          'create_depth_plot': { script: 'depth_plotter.py', tool: 'depth_plotter' },
+          'analyze_depth_data': { script: 'depth_plotter.py', tool: 'depth_plotter' },
+          'analyze_gamma_ray_formations': { script: 'gamma_ray_analyzer.py', tool: 'gamma_analyzer' },
+          'calculate_formation_properties': { script: 'gamma_ray_analyzer.py', tool: 'gamma_analyzer' },
+          'calculate_porosity': { script: 'porosity_calculator.py', tool: 'porosity_calculator' },
+          'analyze_reservoir_quality': { script: 'porosity_calculator.py', tool: 'porosity_calculator' }
+        };
+
+        // Check if any of the tools used have direct mappings
+        for (const tool of toolsUsed) {
+          if (toolMappings[tool]) {
+            scriptName = toolMappings[tool].script;
+            toolName = toolMappings[tool].tool;
+            console.log(`Detected MCP tool: ${tool} -> ${scriptName}`);
+            break;
+          }
         }
-        // Look for gamma ray references
-        else if (queryLower.includes('gamma') || contentLower.includes('gamma') || 
-                 toolsUsed.some((tool: string) => tool.toLowerCase().includes('gamma'))) {
-          scriptName = 'gamma_ray_analyzer.py';
-          toolName = 'gamma_analyzer';
-          console.log('Detected gamma ray analysis request');
-        }
-        // Look for porosity references
-        else if (queryLower.includes('porosity') || contentLower.includes('porosity') || 
-                 toolsUsed.some((tool: string) => tool.toLowerCase().includes('porosity'))) {
-          scriptName = 'porosity_calculator.py';
-          toolName = 'porosity_calculator';
-          console.log('Detected porosity calculation request');
+
+        // Fallback to text-based detection if no direct mapping found
+        if (!scriptName) {
+          if (queryLower.includes('depth') || contentLower.includes('depth')) {
+            scriptName = 'depth_plotter.py';
+            toolName = 'depth_plotter';
+            console.log('Detected depth request via text analysis');
+          }
+          else if (queryLower.includes('gamma') || contentLower.includes('gamma')) {
+            scriptName = 'gamma_ray_analyzer.py';
+            toolName = 'gamma_analyzer';
+            console.log('Detected gamma ray request via text analysis');
+          }
+          else if (queryLower.includes('porosity') || contentLower.includes('porosity')) {
+            scriptName = 'porosity_calculator.py';
+            toolName = 'porosity_calculator';
+            console.log('Detected porosity request via text analysis');
+          }
         }
         
         // Default to the first available LAS file if not specified
