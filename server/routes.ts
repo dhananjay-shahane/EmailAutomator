@@ -703,7 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sender: "geologist@oilcompany.com",
           subject: "Analyze well data for sample_well_01.las",
           body: "Please analyze the gamma ray and resistivity data for sample_well_01.las file and generate depth visualization charts.",
-          status: "completed",
+          status: "completed" as const,
           llmResponse: {
             script: "depth_visualization.py",
             lasFile: "sample_well_01.las",
@@ -722,7 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sender: "petro.engineer@upstream.com",
           subject: "Gamma ray analysis needed",
           body: "I need statistical analysis of gamma ray data from production_well_02.las. Please generate histogram and moving average charts.",
-          status: "completed",
+          status: "completed" as const,
           llmResponse: {
             script: "gamma_ray_analyzer.py",
             lasFile: "production_well_02.las",
