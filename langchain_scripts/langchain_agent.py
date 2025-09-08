@@ -15,26 +15,7 @@ class LangchainMCPAgent:
     def __init__(self):
         self.mcp_resources_path = os.environ.get('MCP_RESOURCES_PATH', './mcp_resources')
         self.output_path = os.environ.get('MCP_OUTPUT_PATH', './output')
-        self.available_tools = [
-            {
-                "name": "depth_plotter",
-                "description": "Creates depth plots and visualizations from LAS file depth data",
-                "output_type": "visualization",
-                "keywords": ["depth", "plot", "visualization", "curve", "log"]
-            },
-            {
-                "name": "gamma_analyzer", 
-                "description": "Analyzes gamma ray data for geological formations",
-                "output_type": "analysis",
-                "keywords": ["gamma", "ray", "formation", "geology", "analysis"]
-            },
-            {
-                "name": "porosity_calculator",
-                "description": "Calculates porosity from neutron and density logs",
-                "output_type": "calculation",
-                "keywords": ["porosity", "neutron", "density", "reservoir", "calculation"]
-            }
-        ]
+        self.available_tools = []  # Dynamically discovered from MCP servers
         self.available_las_files = []
         self.available_scripts = []
 
@@ -48,16 +29,78 @@ class LangchainMCPAgent:
             return False
 
     async def _discover_mcp_resources(self):
-        """Discover available MCP resources"""
+        """Discover available MCP resources dynamically"""
         # Discover LAS files
         las_dir = Path(self.mcp_resources_path) / "las_files"
         if las_dir.exists():
             self.available_las_files = [f.stem for f in las_dir.glob("*.las")]
         
-        # Discover scripts
+        # Discover scripts and dynamically infer tools
         scripts_dir = Path(self.mcp_resources_path) / "scripts"
         if scripts_dir.exists():
             self.available_scripts = [{"name": f.stem, "filename": f.name, "path": str(f)} for f in scripts_dir.glob("*.py")]
+            
+            # AI Agent: Dynamically discover tools from actual script files
+            for script in self.available_scripts:
+                tool_info = await self._ai_analyze_script_capabilities(script)
+                if tool_info:
+                    self.available_tools.append(tool_info)
+    
+    async def _ai_analyze_script_capabilities(self, script: Dict[str, Any]) -> Dict[str, Any]:
+        """AI Agent analyzes script to understand its capabilities"""
+        script_name = script['name']
+        script_path = script['path']
+        
+        try:
+            # Read script file to understand its purpose
+            with open(script_path, 'r') as f:
+                content = f.read()
+            
+            # AI Agent reasoning based on script analysis
+            tool_info = {
+                "name": script_name,
+                "description": f"Python script for {script_name.replace('_', ' ')} analysis",
+                "output_type": "analysis",
+                "keywords": [],
+                "source": "mcp_script_discovery"
+            }
+            
+            # AI analysis of script content for capabilities
+            content_lower = content.lower()
+            
+            # Determine output type from script analysis
+            if any(word in content_lower for word in ['plot', 'chart', 'visualize', 'matplotlib', 'pyplot']):
+                tool_info["output_type"] = "visualization"
+                tool_info["keywords"].extend(["plot", "chart", "visualization"])
+            elif any(word in content_lower for word in ['calculate', 'compute', 'formula']):
+                tool_info["output_type"] = "calculation"
+                tool_info["keywords"].extend(["calculate", "compute"])
+            
+            # Extract domain-specific keywords from script name and content
+            if 'depth' in script_name:
+                tool_info["keywords"].extend(["depth", "log", "curve"])
+                tool_info["description"] = "Analyzes well depth data and creates visualizations"
+            elif 'gamma' in script_name:
+                tool_info["keywords"].extend(["gamma", "ray", "formation", "geology"])
+                tool_info["description"] = "Analyzes gamma ray data for geological formation identification"
+            elif 'porosity' in script_name:
+                tool_info["keywords"].extend(["porosity", "neutron", "density", "reservoir"])
+                tool_info["description"] = "Calculates porosity from neutron and density log data"
+            else:
+                # AI inference from script name
+                name_words = script_name.replace('_', ' ').split()
+                tool_info["keywords"].extend(name_words)
+                tool_info["description"] = f"Performs {script_name.replace('_', ' ')} analysis on well log data"
+            
+            # Add LAS-specific keywords
+            if 'las' in content_lower or any(las_term in content_lower for las_term in ['well', 'log', 'curve']):
+                tool_info["keywords"].extend(["las", "well", "log"])
+            
+            return tool_info
+            
+        except Exception as e:
+            print(f"AI Agent: Error analyzing script {script_name}: {e}", file=sys.stderr)
+            return None
 
     async def _ai_analyze_query(self, query: str) -> Dict[str, Any]:
         """AI agent analyzes user query to understand intent and requirements"""
@@ -119,7 +162,7 @@ class LangchainMCPAgent:
             # AI analysis of the query
             analysis = await self._ai_analyze_query(query)
             
-            if analysis['confidence'] > 0.6 and analysis['best_tool'] and self.available_las_files:
+            if analysis['confidence'] > 0.2 and analysis['best_tool'] and self.available_las_files:
                 # AI agent is confident and can proceed
                 tool = analysis['best_tool']
                 las_file = self.available_las_files[0]
@@ -183,7 +226,7 @@ class LangchainMCPAgent:
             # AI analysis and execution planning
             analysis = await self._ai_analyze_query(query)
             
-            if analysis['confidence'] < 0.4:
+            if analysis['confidence'] < 0.2:
                 raise Exception("AI Agent: Insufficient confidence to process query")
             
             tool = analysis['best_tool']
