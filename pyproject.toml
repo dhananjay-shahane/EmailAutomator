@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.11"
 dependencies = [
+    "langchain>=0.3.27",
+    "langchain-anthropic>=0.3.19",
+    "langchain-mcp-adapters>=0.1.9",
+    "langchain-openai>=0.3.32",
     "lasio>=0.32",
     "matplotlib>=3.10.6",
     "numpy>=2.3.2",

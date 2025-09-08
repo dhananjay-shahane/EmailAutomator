@@ -168,6 +168,21 @@
       "completedAt": "2025-09-08T11:59:16.684Z",
       "id": "e26e5400-7ee8-42f8-a56a-543cff35e62f",
       "createdAt": "2025-09-08T11:58:33.306Z"
+    },
+    {
+      "sender": "direct-query@system.local",
+      "subject": "Direct Query Processing",
+      "body": "Depth visualization using depth_visualization.py with sample_well_01.las",
+      "status": "processing",
+      "llmResponse": null,
+      "mcpScript": null,
+      "lasFile": null,
+      "outputFile": null,
+      "errorMessage": null,
+      "processingTime": null,
+      "completedAt": null,
+      "id": "91e34c95-1981-4fb1-a162-046682885fe7",
+      "createdAt": "2025-09-08T12:32:50.125Z"
     }
   ],
   "systemStatuses": [
@@ -176,10 +191,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T12:30:10.103Z",
+        "lastCheck": "2025-09-08T12:33:10.106Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T12:30:10.103Z"
+      "lastCheck": "2025-09-08T12:33:10.106Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
