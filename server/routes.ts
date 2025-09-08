@@ -193,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Note: Configuration is now stored in frontend localStorage, not backend
       await storage.updateSystemStatus('llm', {
         component: 'llm',
-        status: 'configured', // Mark as configured (connection test will determine if online)
+        status: 'offline', // Mark as offline initially (connection test will determine if online)
         metadata: {
           provider,
           model,
@@ -411,23 +411,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Langchain AI Agent endpoints
   app.post("/api/langchain/check-clarification", async (req, res) => {
     try {
-      const { query } = req.body;
+      const { query, llmConfig } = req.body;
       
       if (!query || typeof query !== 'string') {
         return res.status(400).json({ message: "Query is required" });
       }
 
-      // Get LLM configuration from system status
-      const systemStatus = await storage.getSystemStatus();
-      const llmStatus = systemStatus.find(s => s.component === 'llm');
-      const llmConfig = llmStatus?.metadata ? {
-        provider: llmStatus.metadata.provider,
-        model: llmStatus.metadata.model,
-        endpoint: llmStatus.metadata.endpoint,
-        apiKey: llmStatus.metadata.apiKey
-      } : null;
+      // Use LLM configuration from request body (frontend localStorage)
+      // If not provided, fall back to system status (backward compatibility)
+      let configToUse = llmConfig;
+      if (!configToUse) {
+        const systemStatus = await storage.getSystemStatus();
+        const llmStatus = systemStatus.find(s => s.component === 'llm');
+        configToUse = llmStatus?.metadata ? {
+          provider: llmStatus.metadata.provider,
+          model: llmStatus.metadata.model,
+          endpoint: llmStatus.metadata.endpoint,
+          apiKey: llmStatus.metadata.apiKey
+        } : undefined;
+      }
 
-      const result = await langchainLlmService.checkClarification(query, llmConfig);
+      const result = await langchainLlmService.checkClarification(query, configToUse);
       res.json(result);
       
     } catch (error) {
@@ -444,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/langchain/process-query", async (req, res) => {
     try {
-      const { query } = req.body;
+      const { query, llmConfig } = req.body;
       
       if (!query || typeof query !== 'string') {
         return res.status(400).json({ message: "Query is required" });
@@ -452,15 +456,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Processing Langchain query: ${query}`);
       
-      // Get LLM configuration from system status
-      const systemStatus = await storage.getSystemStatus();
-      const llmStatus = systemStatus.find(s => s.component === 'llm');
-      const llmConfig = llmStatus?.metadata ? {
-        provider: llmStatus.metadata.provider,
-        model: llmStatus.metadata.model,
-        endpoint: llmStatus.metadata.endpoint,
-        apiKey: llmStatus.metadata.apiKey
-      } : null;
+      // Use LLM configuration from request body (frontend localStorage)
+      // If not provided, fall back to system status (backward compatibility)
+      let configToUse = llmConfig;
+      if (!configToUse) {
+        const systemStatus = await storage.getSystemStatus();
+        const llmStatus = systemStatus.find(s => s.component === 'llm');
+        configToUse = llmStatus?.metadata ? {
+          provider: llmStatus.metadata.provider,
+          model: llmStatus.metadata.model,
+          endpoint: llmStatus.metadata.endpoint,
+          apiKey: llmStatus.metadata.apiKey
+        } : undefined;
+      }
       
       // Create email log entry for the Langchain query
       const emailLog = await storage.createEmailLog({
@@ -482,7 +490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         console.log(`Analyzing query with Langchain agent...`);
         
-        const langchainResult = await langchainLlmService.processQuery(query, llmConfig);
+        const langchainResult = await langchainLlmService.processQuery(query, configToUse);
         
         await storage.updateEmailLog(emailLog.id, {
           llmResponse: langchainResult.agentResponse.finalResult,
@@ -733,7 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sender: "drilling@exploration.net",
           subject: "Process drilling logs",
           body: "Please process the latest drilling logs and provide formation evaluation.",
-          status: "processing",
+          status: "processing" as const,
           llmResponse: {
             script: "formation_evaluator.py",
             lasFile: "drilling_logs.las",
