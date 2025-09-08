@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Langchain MCP Agent for LAS file analysis
-This script uses Langchain with MCP adapters to create intelligent AI agents
+This script uses basic MCP adapters to create intelligent AI agents
 that can understand user queries and coordinate multiple tools for analysis.
 """
 
@@ -12,15 +12,6 @@ import os
 import subprocess
 from typing import Dict, List, Any, Optional
 from pathlib import Path
-
-try:
-    from langchain_openai import ChatOpenAI
-    from langchain_anthropic import ChatAnthropic
-    from langchain_core.messages import HumanMessage, SystemMessage
-except ImportError as e:
-    print(f"Error importing required packages: {e}", file=sys.stderr)
-    print("Please ensure langchain-openai, langchain-anthropic, and related packages are installed")
-    sys.exit(1)
 
 class LangchainMCPAgent:
     def __init__(self):
@@ -33,71 +24,15 @@ class LangchainMCPAgent:
         self.available_tools = []
         
     async def initialize_agent(self, llm_config: Optional[Dict] = None):
-        """Initialize the Langchain agent with actual LLM configuration"""
+        """Initialize the basic MCP agent"""
         try:
-            # Get LLM configuration from settings
-            if llm_config and llm_config.get('provider'):
-                if llm_config['provider'] == 'openai':
-                    self.model = ChatOpenAI(
-                        model=llm_config.get('model', 'gpt-3.5-turbo'),
-                        api_key=llm_config.get('apiKey'),
-                        temperature=0.1
-                    )
-                elif llm_config['provider'] == 'anthropic':
-                    self.model = ChatAnthropic(
-                        model=llm_config.get('model', 'claude-3-sonnet-20240229'),
-                        api_key=llm_config.get('apiKey'),
-                        temperature=0.1
-                    )
-                elif llm_config['provider'] == 'ollama':
-                    # For Ollama, use a mock model since we don't have direct integration
-                    self.model = self._create_ollama_mock_model(llm_config)
-                else:
-                    # Fallback to mock model
-                    self.model = self._create_mock_model()
-            else:
-                # No LLM configuration provided - use mock model instead of defaults
-                print("Warning: No LLM configuration provided, using mock model", file=sys.stderr)
-                self.model = self._create_mock_model()
-            
             # Load MCP server data
             await self._load_mcp_server_data()
-            
             return True
         except Exception as e:
             print(f"Error initializing agent: {e}", file=sys.stderr)
             return False
     
-    def _create_mock_model(self):
-        """Create a mock model for fallback"""
-        class MockChatModel:
-            def invoke(self, messages):
-                return type('obj', (object,), {
-                    'content': json.dumps({
-                        'analysis': 'Mock analysis for fallback',
-                        'action': 'analyze_query',
-                        'confidence': 0.8
-                    })
-                })()
-        return MockChatModel()
-    
-    def _create_ollama_mock_model(self, config: Dict[str, Any]):
-        """Create mock model for Ollama configuration"""
-        class OllamaMockModel:
-            def __init__(self, config):
-                self.config = config
-            
-            def invoke(self, messages):
-                return type('obj', (object,), {
-                    'content': json.dumps({
-                        'provider': self.config.get('provider', 'ollama'),
-                        'model': self.config.get('model', 'llama3.2:1b'),
-                        'endpoint': self.config.get('endpoint'),
-                        'analysis': 'Using Ollama configuration',
-                        'confidence': 0.9
-                    })
-                })()
-        return OllamaMockModel(config)
     
     async def _load_mcp_server_data(self):
         """Load data directly from MCP servers using subprocess calls"""
@@ -169,14 +104,8 @@ class LangchainMCPAgent:
             if las_dir.exists():
                 self.available_las_files = [f.stem for f in las_dir.glob("*.las")]
             
-            # Default tools mapping
-            self.available_tools = [
-                {"name": "depth_visualization", "description": "Creates depth visualization plots"},
-                {"name": "gamma_ray_analyzer", "description": "Analyzes gamma ray data"},
-                {"name": "porosity_calculator", "description": "Calculates porosity"},
-                {"name": "resistivity_analyzer", "description": "Analyzes resistivity logs"},
-                {"name": "lithology_classifier", "description": "Classifies rock types"}
-            ]
+            # No default tools - only use what's available from MCP servers
+            self.available_tools = []
         except Exception as e:
             print(f"Error discovering local resources: {e}", file=sys.stderr)
             self.available_scripts = []
@@ -204,57 +133,46 @@ class LangchainMCPAgent:
             if match_result and isinstance(match_result, dict):
                 return match_result
             
-            # If MCP call fails, use LLM-based matching
-            return await self._llm_match_tool_to_query(query)
+            # If MCP call fails, use simple keyword matching
+            return await self._simple_match_tool_to_query(query)
             
         except Exception as e:
             print(f"Error matching tool to query: {e}", file=sys.stderr)
-            return await self._llm_match_tool_to_query(query)
+            return await self._simple_match_tool_to_query(query)
     
-    async def _llm_match_tool_to_query(self, query: str) -> Optional[Dict[str, Any]]:
-        """Use LLM to match query to available tools"""
+    async def _simple_match_tool_to_query(self, query: str) -> Optional[Dict[str, Any]]:
+        """Use simple keyword matching to match query to available tools"""
         try:
-            if not self.model:
-                return None
+            query_lower = query.lower()
             
-            # Get available tools
-            tools_info = [f"{tool['name']}: {tool['description']}" for tool in self.available_tools]
-            tools_list = "\n".join(tools_info)
+            # Simple keyword matching
+            for tool in self.available_tools:
+                tool_name = tool['name'].lower()
+                
+                # Check for keyword matches
+                if 'depth' in query_lower and 'depth' in tool_name:
+                    return {"tool": tool['name'], "confidence": 0.8, "reasoning": "Keyword match: depth"}
+                elif 'gamma' in query_lower and 'gamma' in tool_name:
+                    return {"tool": tool['name'], "confidence": 0.8, "reasoning": "Keyword match: gamma"}
+                elif 'porosity' in query_lower and 'porosity' in tool_name:
+                    return {"tool": tool['name'], "confidence": 0.8, "reasoning": "Keyword match: porosity"}
+                elif 'resistivity' in query_lower and 'resistivity' in tool_name:
+                    return {"tool": tool['name'], "confidence": 0.8, "reasoning": "Keyword match: resistivity"}
+                elif 'lithology' in query_lower and 'lithology' in tool_name:
+                    return {"tool": tool['name'], "confidence": 0.8, "reasoning": "Keyword match: lithology"}
             
-            # Create prompt for LLM
-            prompt = f"""Given this query: "{query}"
+            # If no specific match, return first available tool with lower confidence
+            if self.available_tools:
+                return {
+                    "tool": self.available_tools[0]['name'],
+                    "confidence": 0.6,
+                    "reasoning": "Default selection - first available tool"
+                }
             
-And these available analysis tools:
-{tools_list}
-            
-Select the most appropriate tool and return JSON with:
-{{
-  "tool": "tool_name",
-  "confidence": 0.0-1.0,
-  "reasoning": "explanation"
-}}
-            
-If no tool is appropriate, set confidence to 0.0."""
-            
-            messages = [HumanMessage(content=prompt)]
-            response = self.model.invoke(messages)
-            
-            # Parse LLM response
-            try:
-                result = json.loads(response.content)
-                return result
-            except:
-                # Fallback: pick first available tool with low confidence
-                if self.available_tools:
-                    return {
-                        "tool": self.available_tools[0]['name'],
-                        "confidence": 0.5,
-                        "reasoning": "Fallback selection"
-                    }
-                return None
+            return None
                 
         except Exception as e:
-            print(f"Error with LLM tool matching: {e}", file=sys.stderr)
+            print(f"Error with simple tool matching: {e}", file=sys.stderr)
             return None
     
     async def _create_execution_plan(self, query: str, tool_match: Dict[str, Any], available_files: List[str]) -> List[Dict[str, Any]]:
@@ -270,7 +188,9 @@ If no tool is appropriate, set confidence to 0.0."""
                     break
             
             # Select first available LAS file
-            selected_file = available_files[0] if available_files else "sample_well_01"
+            if not available_files:
+                raise Exception("No LAS files available for analysis")
+            selected_file = available_files[0]
             
             plan = [
                 {
@@ -395,8 +315,10 @@ If no tool is appropriate, set confidence to 0.0."""
             if not tool_match or tool_match.get('confidence', 0) < 0.3:
                 raise Exception("Could not match query to any available tool with sufficient confidence")
             
-            # Select appropriate LAS file and script
-            selected_file = available_files[0] if available_files else "sample_well_01"
+            # Select appropriate LAS file and script (only if available)
+            if not available_files:
+                raise Exception("No LAS files available for analysis")
+            selected_file = available_files[0]
             
             # Find matching script
             matching_script = None
@@ -451,8 +373,7 @@ If no tool is appropriate, set confidence to 0.0."""
             }
             
         except Exception as e:
-            end_time = asyncio.get_event_loop().time()
-            processing_time = (end_time - start_time) * 1000
+            processing_time = 0  # Default time since start_time might not be defined
             return {
                 "id": f"error_{int(asyncio.get_event_loop().time())}",
                 "query": query,

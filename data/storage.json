@@ -233,36 +233,36 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T13:55:44.063Z",
+        "lastCheck": "2025-09-08T14:01:44.068Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T13:55:44.064Z"
+      "lastCheck": "2025-09-08T14:01:44.068Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
       "component": "llm",
-      "status": "configured",
+      "status": "online",
       "metadata": {
         "provider": "ollama",
         "model": "llama3.2:1b",
         "endpoint": "https://bc49b6571423.ngrok-free.app",
         "hasApiKey": false,
-        "lastConfigUpdate": "2025-09-08T13:26:23.018Z",
+        "lastConfigUpdate": "2025-09-08T13:56:30.325Z",
         "configured": true,
         "storageLocation": "localStorage",
-        "lastTest": "2025-09-08T13:26:30.596Z",
-        "responseTime": 5.401
+        "lastTest": "2025-09-08T13:56:37.773Z",
+        "responseTime": 6.086
       },
-      "lastCheck": "2025-09-08T13:26:30.596Z"
+      "lastCheck": "2025-09-08T13:56:37.773Z"
     },
     {
       "id": "401ff8c4-e1a8-4f39-9e32-cd88c9ccb314",
       "component": "mcp_server",
       "status": "online",
       "metadata": {
-        "lastTest": "2025-09-08T13:26:30.612Z"
+        "lastTest": "2025-09-08T13:56:37.775Z"
       },
-      "lastCheck": "2025-09-08T13:26:30.612Z"
+      "lastCheck": "2025-09-08T13:56:37.775Z"
     }
   ]
 }
