@@ -216,12 +216,11 @@
     {
       "id": "5df9bc63-f26a-4554-97ac-09c06af2a984",
       "component": "email_monitor",
-      "status": "online",
+      "status": "offline",
       "metadata": {
-        "lastCheck": "2025-09-08T12:52:25.390Z",
-        "emailsProcessed": 0
+        "lastTest": "2025-09-08T12:57:35.018Z"
       },
-      "lastCheck": "2025-09-08T12:52:25.391Z"
+      "lastCheck": "2025-09-08T12:57:35.018Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
@@ -234,18 +233,20 @@
         "hasApiKey": false,
         "lastConfigUpdate": "2025-09-08T12:57:26.365Z",
         "configured": true,
-        "storageLocation": "localStorage"
+        "storageLocation": "localStorage",
+        "lastTest": "2025-09-08T12:57:35.018Z",
+        "responseTime": 4.757
       },
-      "lastCheck": "2025-09-08T12:57:26.365Z"
+      "lastCheck": "2025-09-08T12:57:35.018Z"
     },
     {
       "id": "401ff8c4-e1a8-4f39-9e32-cd88c9ccb314",
       "component": "mcp_server",
       "status": "online",
       "metadata": {
-        "lastTest": "2025-09-08T12:26:10.592Z"
+        "lastTest": "2025-09-08T12:57:35.028Z"
       },
-      "lastCheck": "2025-09-08T12:26:10.592Z"
+      "lastCheck": "2025-09-08T12:57:35.028Z"
     }
   ]
 }
