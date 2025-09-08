@@ -109,7 +109,7 @@ export default function DirectQueryPanel() {
               ...msg,
               type: 'ai' as const,
               content: data.status === 'completed' 
-                ? `Great! I've successfully analyzed your data. The ${data.llmResponse.tool} analysis is complete.`
+                ? `Great! I've successfully analyzed your data. The analysis is complete.`
                 : data.status === 'error'
                 ? `I encountered an error while processing your request: ${data.errorMessage}`
                 : 'Processing your request...',
@@ -214,14 +214,56 @@ export default function DirectQueryPanel() {
   };
 
   const getProcessingSteps = (metadata?: ChatMessage['metadata']) => {
-    if (!metadata?.llmResponse) return [];
+    if (!metadata) return [];
     
-    return [
-      { icon: <Brain className="w-3 h-3" />, text: `AI Analysis: ${metadata.llmResponse.confidence > 0.8 ? 'High' : 'Medium'} confidence` },
-      { icon: <Code className="w-3 h-3" />, text: `Script: ${metadata.llmResponse.script}` },
-      { icon: <Play className="w-3 h-3" />, text: `LAS File: ${metadata.llmResponse.lasFile}` },
-      { icon: <Image className="w-3 h-3" />, text: metadata.outputFile ? `Output: ${metadata.outputFile.split('/').pop()}` : 'Generating output...' }
-    ];
+    const steps = [];
+    
+    // Handle AI confidence
+    const confidence = metadata.llmResponse?.confidence;
+    if (confidence !== undefined) {
+      steps.push({ 
+        icon: <Brain className="w-3 h-3" />, 
+        text: `AI Analysis: ${confidence > 0.8 ? 'High' : 'Medium'} confidence` 
+      });
+    } else {
+      steps.push({ 
+        icon: <Brain className="w-3 h-3" />, 
+        text: `AI Analysis: Langchain Agent Processing` 
+      });
+    }
+    
+    // Handle script information
+    const script = metadata.llmResponse?.script;
+    if (script) {
+      steps.push({ 
+        icon: <Code className="w-3 h-3" />, 
+        text: `Script: ${script}` 
+      });
+    }
+    
+    // Handle LAS file information
+    const lasFile = metadata.llmResponse?.lasFile;
+    if (lasFile) {
+      steps.push({ 
+        icon: <Play className="w-3 h-3" />, 
+        text: `LAS File: ${lasFile}` 
+      });
+    }
+    
+    // Handle output file
+    if (metadata.outputFile) {
+      steps.push({ 
+        icon: <Image className="w-3 h-3" />, 
+        text: `Output: ${metadata.outputFile.split('/').pop()}` 
+      });
+    } else {
+      steps.push({ 
+        icon: <Image className="w-3 h-3" />, 
+        text: 'Generating output...' 
+      });
+    }
+    
+    return steps;
   };
 
   return (
