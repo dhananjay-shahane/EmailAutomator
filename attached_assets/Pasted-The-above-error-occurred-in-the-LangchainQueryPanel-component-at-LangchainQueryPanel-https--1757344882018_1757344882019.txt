@@ -1,0 +1,30 @@
+The above error occurred in the <LangchainQueryPanel> component:
+
+    at LangchainQueryPanel (https://90a82d9c-8dc3-430a-976e-7788b083a781-00-3l0je36y2uzsu.worf.replit.dev/src/components/LangchainQueryPanel.tsx:31:43)
+    at div
+    at main
+    at div
+    at div
+    at LangchainAgentPage (https://90a82d9c-8dc3-430a-976e-7788b083a781-00-3l0je36y2uzsu.worf.replit.dev/src/pages/langchain-agent.tsx:27:21)
+    at Route (https://90a82d9c-8dc3-430a-976e-7788b083a781-00-3l0je36y2uzsu.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=48da010e:323:16)
+    at Switch (https://90a82d9c-8dc3-430a-976e-7788b083a781-00-3l0je36y2uzsu.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=48da010e:379:17)
+    at Router
+    at Provider (https://90a82d9c-8dc3-430a-976e-7788b083a781-00-3l0je36y2uzsu.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=48da010e:38:15)
+    at TooltipProvider (https://90a82d9c-8dc3-430a-976e-7788b083a781-00-3l0je36y2uzsu.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=48da010e:60:5)
+    at QueryClientProvider (https://90a82d9c-8dc3-430a-976e-7788b083a781-00-3l0je36y2uzsu.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=48da010e:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608Understand this error
+chunk-RPCDYKBN.js?v=48da010e:19413 Uncaught TypeError: Cannot read properties of undefined (reading 'tool')
+    at LangchainQueryPanel.tsx:131:176
+    at Array.map (<anonymous>)
+    at LangchainQueryPanel.tsx:125:36
+    at basicStateReducer (chunk-RPCDYKBN.js?v=48da010e:11703:49)
+    at updateReducer (chunk-RPCDYKBN.js?v=48da010e:11794:30)
+    at updateState (chunk-RPCDYKBN.js?v=48da010e:12021:18)
+    at Object.useState (chunk-RPCDYKBN.js?v=48da010e:12753:24)
+    at useState (chunk-QCHXOAYK.js?v=48da010e:1066:29)
+    at LangchainQueryPanel (LangchainQueryPanel.tsx:73:43)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=48da010e:11548:26)

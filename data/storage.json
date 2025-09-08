@@ -387,16 +387,57 @@
       "sender": "langchain-agent@system.local",
       "subject": "Langchain AI Agent Processing",
       "body": "Use create depth plot for \n    Create depth visualization plots from LAS file data\n    \n    Args:\n        las_file: Path to the LAS file to analyze\n        output_dir: Directory to save the generated plots\n        \n    Returns:\n        Dictionary containing plot information and file paths",
-      "status": "processing",
-      "llmResponse": null,
-      "mcpScript": null,
-      "lasFile": null,
-      "outputFile": null,
+      "status": "completed",
+      "mcpScript": "depth_visualization.py",
+      "lasFile": "sample_well_01.las",
+      "outputFile": "output/2025-09-08_15-15-08/sample_well_01_depth_plotter_output.png",
       "errorMessage": null,
-      "processingTime": null,
-      "completedAt": null,
+      "processingTime": 1238,
+      "completedAt": "2025-09-08T15:15:09.565Z",
       "id": "83bd6bc0-de87-4f93-8464-84cf444a5b2d",
       "createdAt": "2025-09-08T15:14:29.297Z"
+    },
+    {
+      "sender": "langchain-agent@system.local",
+      "subject": "Langchain AI Agent Processing",
+      "body": "Use create depth plot for \n    Create depth visualization plots from LAS file data\n    \n    Args:\n        las_file: Path to the LAS file to analyze\n        output_dir: Directory to save the generated plots\n        \n    Returns:\n        Dictionary containing plot information and file paths",
+      "status": "completed",
+      "mcpScript": "depth_visualization.py",
+      "lasFile": "sample_well_01.las",
+      "outputFile": "output/2025-09-08_15-16-24/sample_well_01_depth_plotter_output.png",
+      "errorMessage": null,
+      "processingTime": 1140,
+      "completedAt": "2025-09-08T15:16:25.617Z",
+      "id": "b345281e-9636-402c-820e-2333c942ded4",
+      "createdAt": "2025-09-08T15:15:40.027Z"
+    },
+    {
+      "sender": "langchain-agent@system.local",
+      "subject": "Langchain AI Agent Processing",
+      "body": "Create depth visualization plots from LAS file data",
+      "status": "completed",
+      "mcpScript": "depth_visualization.py",
+      "lasFile": "sample_well_01.las",
+      "outputFile": "output/2025-09-08_15-20-48/sample_well_01_depth_plotter_output.png",
+      "errorMessage": null,
+      "processingTime": 1151,
+      "completedAt": "2025-09-08T15:20:50.001Z",
+      "id": "2d1080c4-2fbd-4ef5-b9c4-b673c83b1991",
+      "createdAt": "2025-09-08T15:20:08.308Z"
+    },
+    {
+      "sender": "langchain-agent@system.local",
+      "subject": "Langchain AI Agent Processing",
+      "body": "Use analyze depth data for \n    Analyze depth data characteristics from LAS file\n    \n    Args:\n        las_file: Path to the LAS file to analyze\n        \n    Returns:\n        Dictionary containing depth data analysis results",
+      "status": "completed",
+      "mcpScript": "depth_visualization.py",
+      "lasFile": "sample_well_01.las",
+      "outputFile": "output/2025-09-08_15-24-21/sample_well_01_depth_plotter_output.png",
+      "errorMessage": null,
+      "processingTime": 1215,
+      "completedAt": "2025-09-08T15:24:23.031Z",
+      "id": "f9d2ebe0-dfde-4d7b-9b13-7b3962a23795",
+      "createdAt": "2025-09-08T15:23:10.941Z"
     }
   ],
   "systemStatuses": [
@@ -405,10 +446,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T15:13:48.782Z",
+        "lastCheck": "2025-09-08T15:24:48.788Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T15:13:48.782Z"
+      "lastCheck": "2025-09-08T15:24:48.788Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
