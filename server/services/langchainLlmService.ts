@@ -382,29 +382,42 @@ if __name__ == "__main__":
 
       if (result.success && result.stdout) {
         try {
-          // Find the last complete JSON object in stdout (ignoring error messages)
+          // Extract JSON by finding the last complete JSON object in the output
+          // Split by lines and look for a block that starts with { and ends with }
           const lines = result.stdout.split('\n');
-          let jsonStartIndex = -1;
-          let jsonEndIndex = -1;
+          let jsonText = '';
+          let foundStart = false;
+          let braceCount = 0;
           
-          // Find the last occurrence of a line starting with '{'
-          for (let i = lines.length - 1; i >= 0; i--) {
-            if (lines[i].trim().startsWith('}') && jsonEndIndex === -1) {
-              jsonEndIndex = i;
+          // Go through lines looking for JSON block
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            // Start capturing when we find a line that starts with {
+            if (!foundStart && line.startsWith('{')) {
+              foundStart = true;
+              jsonText = line;
+              braceCount = (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
+              continue;
             }
-            if (lines[i].trim().startsWith('{') && jsonEndIndex !== -1) {
-              jsonStartIndex = i;
-              break;
+            
+            // If we're capturing, continue until braces are balanced
+            if (foundStart) {
+              jsonText += '\n' + line;
+              braceCount += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
+              
+              // When braces are balanced, we have complete JSON
+              if (braceCount === 0) {
+                break;
+              }
             }
           }
           
-          if (jsonStartIndex === -1 || jsonEndIndex === -1) {
+          if (!foundStart || braceCount !== 0) {
             throw new Error('No valid JSON found in agent output');
           }
           
-          const jsonLines = lines.slice(jsonStartIndex, jsonEndIndex + 1);
-          const jsonString = jsonLines.join('\n');
-          const response = JSON.parse(jsonString);
+          const response = JSON.parse(jsonText);
           return response;
         } catch (parseError) {
           console.error('Failed to parse Langchain clarification response:', parseError);
@@ -442,29 +455,42 @@ if __name__ == "__main__":
 
       if (result.success && result.stdout) {
         try {
-          // Find the last complete JSON object in stdout (ignoring error messages)
+          // Extract JSON by finding the last complete JSON object in the output
+          // Split by lines and look for a block that starts with { and ends with }
           const lines = result.stdout.split('\n');
-          let jsonStartIndex = -1;
-          let jsonEndIndex = -1;
+          let jsonText = '';
+          let foundStart = false;
+          let braceCount = 0;
           
-          // Find the last occurrence of a line starting with '{'
-          for (let i = lines.length - 1; i >= 0; i--) {
-            if (lines[i].trim().startsWith('}') && jsonEndIndex === -1) {
-              jsonEndIndex = i;
+          // Go through lines looking for JSON block
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            // Start capturing when we find a line that starts with {
+            if (!foundStart && line.startsWith('{')) {
+              foundStart = true;
+              jsonText = line;
+              braceCount = (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
+              continue;
             }
-            if (lines[i].trim().startsWith('{') && jsonEndIndex !== -1) {
-              jsonStartIndex = i;
-              break;
+            
+            // If we're capturing, continue until braces are balanced
+            if (foundStart) {
+              jsonText += '\n' + line;
+              braceCount += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
+              
+              // When braces are balanced, we have complete JSON
+              if (braceCount === 0) {
+                break;
+              }
             }
           }
           
-          if (jsonStartIndex === -1 || jsonEndIndex === -1) {
+          if (!foundStart || braceCount !== 0) {
             throw new Error('No valid JSON found in agent output');
           }
           
-          const jsonLines = lines.slice(jsonStartIndex, jsonEndIndex + 1);
-          const jsonString = jsonLines.join('\n');
-          const agentResponse = JSON.parse(jsonString);
+          const agentResponse = JSON.parse(jsonText);
           
           return {
             id: `langchain-${Date.now()}`,
