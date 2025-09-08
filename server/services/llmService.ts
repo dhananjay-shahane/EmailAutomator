@@ -1,5 +1,5 @@
- import axios from 'axios';
-import { mcpResourceService } from './mcpResourceService.js';
+import axios from "axios";
+import { mcpResourceService } from "./mcpResourceService.js";
 
 export interface LLMResponse {
   script: string;
@@ -17,42 +17,59 @@ export class LLMService {
 
   constructor() {
     // Set default Ollama configuration from environment or fallback
-    this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
-    this.model = 'llama3.2:1b';
-    this.provider = 'ollama';
+    this.endpoint = (
+      process.env.OLLAMA_ENDPOINT || "https://88c46355da8c.ngrok-free.app"
+    ).replace(/\/$/, "");
+    this.model = "llama3.2:1b";
+    this.provider = "ollama";
     this.apiKey = undefined;
   }
 
   // Accept configuration from frontend localStorage
-  setConfig(config: { provider: string; model: string; endpoint?: string; apiKey?: string }) {
+  setConfig(config: {
+    provider: string;
+    model: string;
+    endpoint?: string;
+    apiKey?: string;
+  }) {
     this.provider = config.provider;
     this.model = config.model;
-    this.endpoint = config.endpoint ? config.endpoint.replace(/\/$/, '') : '';
+    this.endpoint = config.endpoint ? config.endpoint.replace(/\/$/, "") : "";
     this.apiKey = config.apiKey;
   }
 
   // Use default configuration if not provided
   private useDefaults() {
     if (!this.endpoint || !this.provider || !this.model) {
-      this.endpoint = (process.env.OLLAMA_ENDPOINT || 'https://88c46355da8c.ngrok-free.app').replace(/\/$/, '');
-      this.model = 'llama3.2:1b';
-      this.provider = 'ollama';
+      this.endpoint = (
+        process.env.OLLAMA_ENDPOINT || "https://88c46355da8c.ngrok-free.app"
+      ).replace(/\/$/, "");
+      this.model = "llama3.2:1b";
+      this.provider = "ollama";
       this.apiKey = undefined;
     }
   }
 
-  async analyzeEmailContent(emailBody: string, config?: { provider: string; model: string; endpoint?: string; apiKey?: string }): Promise<LLMResponse> {
+  async analyzeEmailContent(
+    emailBody: string,
+    config?: {
+      provider: string;
+      model: string;
+      endpoint?: string;
+      apiKey?: string;
+    },
+  ): Promise<LLMResponse> {
     // Use provided config or defaults
     if (config) {
       this.setConfig(config);
     } else {
       this.useDefaults();
     }
-    
+
     // Get MCP resources for the LLM
     await mcpResourceService.discoverResources();
     const resourceInfo = mcpResourceService.getResourcesForLLM();
-    
+
     const prompt = `Analyze this email request for LAS (Log ASCII Standard) file processing:
 
 Email content: "${emailBody}"
@@ -140,26 +157,30 @@ Example responses:
 Respond only with valid JSON:`;
 
     try {
-      const response = await axios.post(`${this.endpoint}/api/generate`, {
-        model: this.model,
-        prompt,
-        stream: false,
-        format: 'json',
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await axios.post(
+        `${this.endpoint}/api/generate`,
+        {
+          model: this.model,
+          prompt,
+          stream: false,
+          format: "json",
         },
-        timeout: 45000,
-      });
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 45000,
+        },
+      );
 
       const responseText = response.data.response;
-      
+
       try {
         const parsed = JSON.parse(responseText);
-        
+
         // Validate required fields
         if (!parsed.script || !parsed.lasFile || !parsed.tool) {
-          throw new Error('Missing required fields in LLM response');
+          throw new Error("Missing required fields in LLM response");
         }
 
         return {
@@ -167,30 +188,45 @@ Respond only with valid JSON:`;
           lasFile: parsed.lasFile,
           tool: parsed.tool,
           confidence: parsed.confidence || 0.5,
-          reasoning: parsed.reasoning || 'No reasoning provided',
+          reasoning: parsed.reasoning || "No reasoning provided",
         };
       } catch (parseError) {
-        console.error('Failed to parse LLM response as JSON:', responseText);
-        throw new Error(`LLM returned invalid response: ${responseText.substring(0, 100)}...`);
+        console.error("Failed to parse LLM response as JSON:", responseText);
+        throw new Error(
+          `LLM returned invalid response: ${responseText.substring(0, 100)}...`,
+        );
       }
     } catch (error) {
-      console.error('LLM service error:', error);
-      
+      console.error("LLM service error:", error);
+
       // Use MCP resource service as intelligent fallback
-      console.log('LLM unavailable, using MCP resource service fallback...');
+      console.log("LLM unavailable, using MCP resource service fallback...");
       const fallbackResult = await mcpResourceService.findBestMatch(emailBody);
-      
+
       return {
         script: fallbackResult.script,
         lasFile: fallbackResult.lasFile,
         tool: fallbackResult.tool,
         confidence: 0.7, // Lower confidence since we're using fallback
-        reasoning: `${fallbackResult.reasoning} (LLM unavailable, used resource matching)`
+        reasoning: `${fallbackResult.reasoning} (LLM unavailable, used resource matching)`,
       };
     }
   }
 
-  async checkClarification(query: string, config?: { provider: string; model: string; endpoint?: string; apiKey?: string }): Promise<{ needsClarification: boolean; confidence: number; suggestions: string[]; message: string }> {
+  async checkClarification(
+    query: string,
+    config?: {
+      provider: string;
+      model: string;
+      endpoint?: string;
+      apiKey?: string;
+    },
+  ): Promise<{
+    needsClarification: boolean;
+    confidence: number;
+    suggestions: string[];
+    message: string;
+  }> {
     // Use provided config or defaults
     if (config) {
       this.setConfig(config);
@@ -198,25 +234,11 @@ Respond only with valid JSON:`;
       this.useDefaults();
     }
 
-    const prompt = `Analyze this query to determine if the user wants LAS file analysis or just general conversation:
+    const prompt = `Analyze this LAS analysis query and determine if it needs clarification:
 
 Query: "${query}"
 
-FIRST: Check if this is actually a request for LAS file analysis or just general conversation/greeting.
-
-Common greetings/general queries that DON'T need LAS analysis:
-- "hi", "hello", "hey", "greetings"
-- "how are you", "what's up", "good morning"
-- "thank you", "thanks", "goodbye", "bye"
-- General questions about the system
-- Test messages or simple words
-
-LAS analysis keywords that DO need processing:
-- "gamma ray", "resistivity", "porosity", "lithology", "depth"
-- "analysis", "analyze", "plot", "visualization", "calculate"
-- "LAS file", "well data", "log", "formation"
-
-Available LAS analysis options:
+Available options:
 - "depth visualization" using depth_visualization.py with sample_well_01.las
 - "gamma ray analysis" using gamma_ray_analyzer.py with production_well_02.las
 - "resistivity analysis" using resistivity_analyzer.py with exploration_well_04.las
@@ -224,20 +246,12 @@ Available LAS analysis options:
 - "lithology classification" using lithology_classifier.py with development_well_05.las
 
 Respond with JSON containing:
-- needsClarification: true if query needs clarification OR is just a greeting/general conversation
+- needsClarification: true if query is unclear or ambiguous
 - confidence: 0.0-1.0 confidence in understanding the request
-- suggestions: array of clarification options if needed (empty for greetings)
+- suggestions: array of clarification options if needed
 - message: helpful response message
 
-Example responses for greetings:
-{
-  "needsClarification": true,
-  "confidence": 0.9,
-  "suggestions": [],
-  "message": "Hello! I'm here to help with LAS file analysis. You can ask me to analyze gamma rays, resistivity, porosity, lithology, or create depth visualizations."
-}
-
-Example for clear analysis request:
+Example responses:
 {
   "needsClarification": false,
   "confidence": 0.9,
@@ -245,7 +259,6 @@ Example for clear analysis request:
   "message": "I understand you want gamma ray analysis. Let me process that."
 }
 
-Example for unclear analysis request:
 {
   "needsClarification": true,
   "confidence": 0.3,
@@ -262,70 +275,90 @@ Example for unclear analysis request:
 Respond only with valid JSON:`;
 
     try {
-      const response = await axios.post(`${this.endpoint}/api/generate`, {
-        model: this.model,
-        prompt,
-        stream: false,
-        format: 'json',
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await axios.post(
+        `${this.endpoint}/api/generate`,
+        {
+          model: this.model,
+          prompt,
+          stream: false,
+          format: "json",
         },
-        timeout: 30000,
-      });
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 30000,
+        },
+      );
 
       const responseText = response.data.response;
-      
+
       try {
         const parsed = JSON.parse(responseText);
         return {
           needsClarification: parsed.needsClarification || false,
           confidence: parsed.confidence || 0.5,
           suggestions: parsed.suggestions || [],
-          message: parsed.message || 'Let me help you with your analysis request.'
+          message:
+            parsed.message || "Let me help you with your analysis request.",
         };
       } catch (parseError) {
-        console.error('Failed to parse clarification response as JSON:', responseText);
-        throw new Error('Invalid JSON response from LLM service');
+        console.error(
+          "Failed to parse clarification response as JSON:",
+          responseText,
+        );
+        throw new Error("Invalid JSON response from LLM service");
       }
     } catch (error) {
-      console.error('LLM clarification error:', error);
-      throw new Error(`LLM service unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("LLM clarification error:", error);
+      throw new Error(
+        `LLM service unavailable: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
-  async testConnection(config?: { provider: string; model: string; endpoint?: string; apiKey?: string }): Promise<{ success: boolean; responseTime?: number; error?: string }> {
+  async testConnection(config?: {
+    provider: string;
+    model: string;
+    endpoint?: string;
+    apiKey?: string;
+  }): Promise<{ success: boolean; responseTime?: number; error?: string }> {
     // Use provided config or defaults
     if (config) {
       this.setConfig(config);
     } else {
       this.useDefaults();
     }
-    
+
     if (!this.endpoint || !this.provider || !this.model) {
       return {
         success: false,
         responseTime: 0,
-        error: 'LLM not configured. Please configure provider, model, and endpoint in settings.'
+        error:
+          "LLM not configured. Please configure provider, model, and endpoint in settings.",
       };
     }
-    
+
     const startTime = Date.now();
-    
+
     try {
-      const response = await axios.post(`${this.endpoint}/api/generate`, {
-        model: this.model,
-        prompt: 'Test connection. Respond with: OK',
-        stream: false,
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await axios.post(
+        `${this.endpoint}/api/generate`,
+        {
+          model: this.model,
+          prompt: "Test connection. Respond with: OK",
+          stream: false,
         },
-        timeout: 15000,
-      });
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 15000,
+        },
+      );
 
       const responseTime = Date.now() - startTime;
-      
+
       return {
         success: true,
         responseTime: responseTime / 1000, // Convert to seconds
@@ -335,7 +368,8 @@ Respond only with valid JSON:`;
       return {
         success: false,
         responseTime: responseTime / 1000,
-        error: error instanceof Error ? error.message : 'LLM service unavailable',
+        error:
+          error instanceof Error ? error.message : "LLM service unavailable",
       };
     }
   }

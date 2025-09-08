@@ -166,7 +166,7 @@ export default function DirectQueryPanel() {
       // First check if we need clarification
       const clarificationResult = await checkClarificationMutation.mutateAsync(userMessage);
       
-      if (clarificationResult.needsClarification && clarificationResult.confidence < 0.6) {
+      if (clarificationResult.needsClarification) {
         // Add AI clarification message
         addMessage('ai', clarificationResult.message, {
           clarificationOptions: clarificationResult.suggestions

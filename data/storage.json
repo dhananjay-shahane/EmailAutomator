@@ -105,6 +105,48 @@
       "completedAt": "2025-09-08T11:48:21.344Z",
       "id": "0740a65c-0f7e-41e7-be23-f9a1bfd0304a",
       "createdAt": "2025-09-08T11:48:12.775Z"
+    },
+    {
+      "sender": "direct-query@system.local",
+      "subject": "Direct Query Processing",
+      "body": "make gamma ray",
+      "status": "completed",
+      "llmResponse": {
+        "script": "gamma_ray_analyzer.py",
+        "lasFile": "sample_well_01.las",
+        "tool": "gamma_analyzer",
+        "confidence": 0.95,
+        "reasoning": "Request mentions gamma ray, using gamma ray analysis with basic well data"
+      },
+      "mcpScript": "gamma_ray_analyzer.py",
+      "lasFile": "sample_well_01.las",
+      "outputFile": "output/2025-09-08_11-50-00/sample_well_01_gamma_analyzer_output.png",
+      "errorMessage": null,
+      "processingTime": 1378,
+      "completedAt": "2025-09-08T11:50:01.539Z",
+      "id": "6fa944da-416f-4ba0-8ebf-b83c23fd5e93",
+      "createdAt": "2025-09-08T11:49:20.625Z"
+    },
+    {
+      "sender": "direct-query@system.local",
+      "subject": "Direct Query Processing",
+      "body": "hi",
+      "status": "completed",
+      "llmResponse": {
+        "script": "lithology_classifier.py",
+        "lasFile": "development_well_05.las",
+        "tool": "lithology_classifier",
+        "confidence": 0.95,
+        "reasoning": "Request asks for rock type classification with advanced logging suite and development data"
+      },
+      "mcpScript": "lithology_classifier.py",
+      "lasFile": "development_well_05.las",
+      "outputFile": "output/2025-09-08_11-53-25/development_well_05_lithology_classifier_output.png",
+      "errorMessage": null,
+      "processingTime": 2425,
+      "completedAt": "2025-09-08T11:53:28.244Z",
+      "id": "07547547-4177-49d4-8338-99f0efa7f89c",
+      "createdAt": "2025-09-08T11:52:43.336Z"
     }
   ],
   "systemStatuses": [
@@ -113,10 +155,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T11:48:33.099Z",
+        "lastCheck": "2025-09-08T11:55:36.196Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T11:48:33.100Z"
+      "lastCheck": "2025-09-08T11:55:36.196Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
