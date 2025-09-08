@@ -492,43 +492,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const langchainResult = await langchainLlmService.processQuery(query, configToUse);
         
+        // Extract relevant information from Langchain agent response
+        const finalResult = langchainResult.agentResponse?.finalResult;
+        const toolsUsed = finalResult?.mcp_tools_used || [];
+        const content = finalResult?.content || '';
+        
+        // Try to extract script/tool information from the response
+        let scriptName = null;
+        let toolName = null;
+        let lasFileName = null;
+        
+        // Look for depth plotter references
+        if (content.toLowerCase().includes('depth') || toolsUsed.some(tool => tool.includes('depth'))) {
+          scriptName = 'depth_plotter.py';
+          toolName = 'depth_plotter';
+        }
+        // Look for gamma ray references
+        else if (content.toLowerCase().includes('gamma') || toolsUsed.some(tool => tool.includes('gamma'))) {
+          scriptName = 'gamma_ray_analyzer.py';
+          toolName = 'gamma_analyzer';
+        }
+        // Look for porosity references
+        else if (content.toLowerCase().includes('porosity') || toolsUsed.some(tool => tool.includes('porosity'))) {
+          scriptName = 'porosity_calculator.py';
+          toolName = 'porosity_calculator';
+        }
+        
+        // Default to the first available LAS file if not specified
+        const availableLasFiles = ['sample_well_01.las', 'production_well_02.las', 'offshore_well_03.las', 'exploration_well_04.las', 'development_well_05.las'];
+        lasFileName = availableLasFiles[0]; // Use first available
+
         await storage.updateEmailLog(emailLog.id, {
-          llmResponse: langchainResult.agentResponse.finalResult,
-          mcpScript: langchainResult.agentResponse.finalResult.script,
-          lasFile: langchainResult.agentResponse.finalResult.lasFile,
+          llmResponse: finalResult,
+          mcpScript: scriptName,
+          lasFile: lasFileName,
         });
 
-        // Process with MCP using the final result from Langchain agent
-        console.log(`Processing LAS file via Langchain: ${langchainResult.agentResponse.finalResult.lasFile} with script: ${langchainResult.agentResponse.finalResult.script}`);
-        const mcpResult = await mcpService.processLASFile(
-          langchainResult.agentResponse.finalResult.lasFile,
-          langchainResult.agentResponse.finalResult.script,
-          langchainResult.agentResponse.finalResult.tool
-        );
+        if (scriptName && toolName && lasFileName) {
+          // Process with MCP using the extracted information
+          console.log(`Processing LAS file via Langchain: ${lasFileName} with script: ${scriptName}`);
+          const mcpResult = await mcpService.processLASFile(
+            lasFileName,
+            scriptName,
+            toolName
+          );
 
-        if (mcpResult.success && mcpResult.outputPath) {
-          await storage.updateEmailLog(emailLog.id, {
-            status: 'completed',
-            outputFile: mcpResult.outputPath,
-            processingTime: mcpResult.processingTime,
-            completedAt: new Date(),
-          });
+          if (mcpResult.success && mcpResult.outputPath) {
+            await storage.updateEmailLog(emailLog.id, {
+              status: 'completed',
+              outputFile: mcpResult.outputPath,
+              processingTime: mcpResult.processingTime,
+              completedAt: new Date(),
+            });
 
-          console.log(`Langchain query processed successfully`);
-          
-          const updatedLog = await storage.getEmailLog(emailLog.id);
-          broadcast({ type: 'email_processed', emailLog: updatedLog });
+            console.log(`Langchain query processed successfully`);
+            
+            const updatedLog = await storage.getEmailLog(emailLog.id);
+            broadcast({ type: 'email_processed', emailLog: updatedLog });
 
-          res.json({
-            id: emailLog.id,
-            query: query,
-            agentResponse: langchainResult.agentResponse,
-            outputFile: mcpResult.outputPath,
-            status: 'completed',
-            processingTime: mcpResult.processingTime,
-          });
+            res.json({
+              id: emailLog.id,
+              query: query,
+              agentResponse: langchainResult.agentResponse,
+              outputFile: mcpResult.outputPath,
+              status: 'completed',
+              processingTime: mcpResult.processingTime,
+            });
+          } else {
+            throw new Error(mcpResult.error || 'MCP processing failed');
+          }
         } else {
-          throw new Error(mcpResult.error || 'MCP processing failed');
+          throw new Error('Unable to determine appropriate script and tool from Langchain response');
         }
 
       } catch (processingError) {

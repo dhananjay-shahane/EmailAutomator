@@ -320,36 +320,34 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-08T14:45:47.638Z",
+        "lastCheck": "2025-09-08T14:48:47.641Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-08T14:45:47.638Z"
+      "lastCheck": "2025-09-08T14:48:47.641Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
       "component": "llm",
-      "status": "online",
+      "status": "offline",
       "metadata": {
         "provider": "ollama",
         "model": "llama3.2:1b",
         "endpoint": "https://bc49b6571423.ngrok-free.app",
         "hasApiKey": false,
-        "lastConfigUpdate": "2025-09-08T14:41:01.735Z",
+        "lastConfigUpdate": "2025-09-08T14:47:13.523Z",
         "configured": true,
-        "storageLocation": "localStorage",
-        "lastTest": "2025-09-08T14:41:04.727Z",
-        "responseTime": 1.122
+        "storageLocation": "localStorage"
       },
-      "lastCheck": "2025-09-08T14:41:04.727Z"
+      "lastCheck": "2025-09-08T14:47:13.523Z"
     },
     {
       "id": "401ff8c4-e1a8-4f39-9e32-cd88c9ccb314",
       "component": "mcp_server",
       "status": "online",
       "metadata": {
-        "lastTest": "2025-09-08T14:41:04.728Z"
+        "lastTest": "2025-09-08T14:47:11.329Z"
       },
-      "lastCheck": "2025-09-08T14:41:04.728Z"
+      "lastCheck": "2025-09-08T14:47:11.329Z"
     }
   ]
 }
