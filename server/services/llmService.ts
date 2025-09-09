@@ -16,12 +16,10 @@ export class LLMService {
   private apiKey?: string;
 
   constructor() {
-    // Set default Ollama configuration from environment or fallback
-    this.endpoint = (
-      process.env.OLLAMA_ENDPOINT || "http://localhost:11434"
-    ).replace(/\/$/, "");
-    this.model = "llama3.2:1b";
-    this.provider = "ollama";
+    // Initialize empty - require configuration from frontend
+    this.endpoint = "";
+    this.model = "";
+    this.provider = "";
     this.apiKey = undefined;
   }
 
@@ -38,17 +36,6 @@ export class LLMService {
     this.apiKey = config.apiKey;
   }
 
-  // Use default configuration if not provided
-  private useDefaults() {
-    if (!this.endpoint || !this.provider || !this.model) {
-      this.endpoint = (
-        process.env.OLLAMA_ENDPOINT || "http://localhost:11434"
-      ).replace(/\/$/, "");
-      this.model = "llama3.2:1b";
-      this.provider = "ollama";
-      this.apiKey = undefined;
-    }
-  }
 
 
   async analyzeEmailContent(
@@ -60,11 +47,14 @@ export class LLMService {
       apiKey?: string;
     },
   ): Promise<LLMResponse> {
-    // Use provided config or defaults
+    // Use provided config
     if (config) {
       this.setConfig(config);
-    } else {
-      this.useDefaults();
+    }
+
+    // Validate configuration
+    if (!this.endpoint || !this.provider || !this.model) {
+      throw new Error("LLM not configured. Please configure provider, model, and endpoint in settings.");
     }
 
     // Get MCP resources for the LLM
@@ -232,11 +222,14 @@ Respond only with valid JSON:`;
     suggestions: string[];
     message: string;
   }> {
-    // Use provided config or defaults
+    // Use provided config
     if (config) {
       this.setConfig(config);
-    } else {
-      this.useDefaults();
+    }
+
+    // Validate configuration
+    if (!this.endpoint || !this.provider || !this.model) {
+      throw new Error("LLM not configured. Please configure provider, model, and endpoint in settings.");
     }
 
     const prompt = `Analyze this LAS analysis query and determine if it needs clarification:
@@ -328,11 +321,9 @@ Respond only with valid JSON:`;
     endpoint?: string;
     apiKey?: string;
   }): Promise<{ success: boolean; responseTime?: number; error?: string }> {
-    // Use provided config or defaults
+    // Use provided config
     if (config) {
       this.setConfig(config);
-    } else {
-      this.useDefaults();
     }
 
     if (!this.endpoint || !this.provider || !this.model) {

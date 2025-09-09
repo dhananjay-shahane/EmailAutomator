@@ -653,10 +653,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-09T04:55:57.185Z",
+        "lastCheck": "2025-09-09T04:57:57.186Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-09T04:55:57.185Z"
+      "lastCheck": "2025-09-09T04:57:57.186Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
