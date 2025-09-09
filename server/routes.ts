@@ -291,19 +291,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // If we have analysis keywords, use LLM for more detailed processing
+      // Check if LLM is properly configured
+      if (!llmConfig || !llmConfig.endpoint || !llmConfig.provider) {
+        return res.json({
+          needsClarification: true,
+          confidence: 0.8,
+          suggestions: [
+            "Depth visualization with sample_well_01.las", 
+            "Gamma ray analysis with production_well_02.las",
+            "Resistivity analysis with exploration_well_04.las",
+            "Porosity calculation with offshore_well_03.las",
+            "Lithology classification with development_well_05.las"
+          ],
+          message: "I understand you want to analyze data. Please configure the LLM service in Settings first, then I can provide more specific guidance."
+        });
+      }
+
+      // If we have analysis keywords and LLM is configured, use LLM for more detailed processing
       const clarificationResult = await llmService.checkClarification(query, llmConfig);
       res.json(clarificationResult);
     } catch (error) {
       console.error('Clarification check error:', error);
       res.status(500).json({ 
         needsClarification: true,
-        confidence: 0.1,
+        confidence: 0.8,
         suggestions: [
+          "Depth visualization with sample_well_01.las", 
           "Gamma ray analysis with production_well_02.las",
-          "Depth visualization with sample_well_01.las"
+          "Resistivity analysis with exploration_well_04.las",
+          "Porosity calculation with offshore_well_03.las",
+          "Lithology classification with development_well_05.las"
         ],
-        message: "I'm having trouble understanding your request. Could you try rephrasing it?"
+        message: "I understand you want to analyze data. Please configure the LLM service in Settings to enable advanced query understanding."
       });
     }
   });
@@ -338,6 +357,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Extract LLM config from request if provided
         const { llmConfig } = req.body;
+        
+        // Check if LLM is properly configured
+        if (!llmConfig || !llmConfig.endpoint || !llmConfig.provider) {
+          throw new Error("LLM service not configured. Please configure the LLM service in Settings first.");
+        }
         
         // Analyze query with LLM
         console.log('Analyzing query with LLM...');
