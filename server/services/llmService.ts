@@ -50,128 +50,6 @@ export class LLMService {
     }
   }
 
-  // Fallback analysis when LLM service is unavailable
-  private fallbackAnalysis(emailBody: string): LLMResponse | null {
-    const content = emailBody.toLowerCase();
-    
-    // Define keyword mapping with priority order (most specific first)
-    const patterns = [
-      {
-        keywords: ['gamma', 'gamma ray', 'radioactivity'],
-        script: 'gamma_ray_analyzer.py',
-        lasFile: 'production_well_02.las',
-        tool: 'gamma_analyzer',
-        reasoning: 'Request mentions gamma ray analysis - using gamma ray analyzer with production well data'
-      },
-      {
-        keywords: ['resistivity', 'resistance', 'formation evaluation'],
-        script: 'resistivity_analyzer.py',
-        lasFile: 'exploration_well_04.las',
-        tool: 'resistivity_analyzer',
-        reasoning: 'Request mentions resistivity analysis - using resistivity analyzer with exploration data'
-      },
-      {
-        keywords: ['porosity', 'neutron', 'density', 'pore space'],
-        script: 'porosity_calculator.py',
-        lasFile: 'offshore_well_03.las',
-        tool: 'porosity_calculator',
-        reasoning: 'Request mentions porosity analysis - using porosity calculator with offshore well data'
-      },
-      {
-        keywords: ['lithology', 'rock type', 'classification', 'formation'],
-        script: 'lithology_classifier.py',
-        lasFile: 'development_well_05.las',
-        tool: 'lithology_classifier',
-        reasoning: 'Request mentions lithology classification - using lithology classifier with development well data'
-      },
-      {
-        keywords: ['plot', 'depth', 'visualization', 'chart', 'graph'],
-        script: 'depth_visualization.py',
-        lasFile: 'sample_well_01.las',
-        tool: 'depth_plotter',
-        reasoning: 'Request mentions visualization/plotting - using depth plotter with sample well data'
-      }
-    ];
-
-    // Find the first matching pattern
-    for (const pattern of patterns) {
-      if (pattern.keywords.some(keyword => content.includes(keyword))) {
-        return {
-          script: pattern.script,
-          lasFile: pattern.lasFile,
-          tool: pattern.tool,
-          confidence: 0.85,
-          reasoning: pattern.reasoning
-        };
-      }
-    }
-
-    // Default fallback to depth visualization
-    return {
-      script: 'depth_visualization.py',
-      lasFile: 'sample_well_01.las',
-      tool: 'depth_plotter',
-      confidence: 0.6,
-      reasoning: 'Default analysis - using depth visualization with sample well data'
-    };
-  }
-
-  // Fallback clarification check when LLM service is unavailable
-  private fallbackClarificationCheck(query: string): {
-    needsClarification: boolean;
-    confidence: number;
-    suggestions: string[];
-    message: string;
-  } | null {
-    const content = query.toLowerCase().trim();
-    
-    // If query is empty or very short, needs clarification
-    if (!content || content.length < 3) {
-      return {
-        needsClarification: true,
-        confidence: 0.9,
-        suggestions: [
-          "Depth visualization with sample_well_01.las",
-          "Gamma ray analysis with production_well_02.las", 
-          "Resistivity analysis with exploration_well_04.las",
-          "Porosity calculation with offshore_well_03.las",
-          "Lithology classification with development_well_05.las"
-        ],
-        message: "Please provide more details about what type of analysis you need."
-      };
-    }
-
-    // Check for clear patterns that don't need clarification
-    const clearPatterns = [
-      'gamma', 'gamma ray', 'resistivity', 'porosity', 'lithology', 
-      'depth', 'visualization', 'plot', 'chart', 'analyze', 'analysis'
-    ];
-    
-    const hasKeywords = clearPatterns.some(pattern => content.includes(pattern));
-    
-    if (hasKeywords) {
-      return {
-        needsClarification: false,
-        confidence: 0.85,
-        suggestions: [],
-        message: "I understand your request. Let me process that analysis for you."
-      };
-    }
-
-    // If unclear, ask for clarification
-    return {
-      needsClarification: true,
-      confidence: 0.4,
-      suggestions: [
-        "Depth visualization with sample_well_01.las",
-        "Gamma ray analysis with production_well_02.las",
-        "Resistivity analysis with exploration_well_04.las", 
-        "Porosity calculation with offshore_well_03.las",
-        "Lithology classification with development_well_05.las"
-      ],
-      message: "I'm not sure what type of analysis you need. Could you specify what you'd like to analyze?"
-    };
-  }
 
   async analyzeEmailContent(
     emailBody: string,
@@ -187,13 +65,6 @@ export class LLMService {
       this.setConfig(config);
     } else {
       this.useDefaults();
-    }
-
-    // Try fallback analysis first for common patterns
-    const fallbackResult = this.fallbackAnalysis(emailBody);
-    if (fallbackResult) {
-      console.log("Using fallback analysis for query:", emailBody);
-      return fallbackResult;
     }
 
     // Get MCP resources for the LLM
@@ -366,13 +237,6 @@ Respond only with valid JSON:`;
       this.setConfig(config);
     } else {
       this.useDefaults();
-    }
-
-    // Try fallback clarification check first
-    const fallbackResult = this.fallbackClarificationCheck(query);
-    if (fallbackResult) {
-      console.log("Using fallback clarification check for query:", query);
-      return fallbackResult;
     }
 
     const prompt = `Analyze this LAS analysis query and determine if it needs clarification:
