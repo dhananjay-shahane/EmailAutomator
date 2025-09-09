@@ -489,18 +489,59 @@
       "completedAt": "2025-09-09T04:36:10.933Z",
       "id": "8f435bf8-6ae3-4655-b4a8-208357812c75",
       "createdAt": "2025-09-09T04:35:58.185Z"
+    },
+    {
+      "sender": "direct-query@system.local",
+      "subject": "Direct Query Processing",
+      "body": "Depth visualization with sample_well_01.las",
+      "status": "completed",
+      "llmResponse": {
+        "script": "depth_visualization.py",
+        "lasFile": "sample_well_01.las",
+        "tool": "depth_plotter",
+        "confidence": 0.85,
+        "reasoning": "Request mentions visualization/plotting - using depth plotter with sample well data"
+      },
+      "mcpScript": "depth_visualization.py",
+      "lasFile": "sample_well_01.las",
+      "outputFile": "output/2025-09-09_04-37-07/sample_well_01_depth_plotter_output.png",
+      "errorMessage": null,
+      "processingTime": 1368,
+      "completedAt": "2025-09-09T04:37:08.719Z",
+      "id": "4687dbb3-42d5-4001-842a-888bb5bd98a4",
+      "createdAt": "2025-09-09T04:37:07.348Z"
+    },
+    {
+      "sender": "direct-query@system.local",
+      "subject": "Direct Query Processing",
+      "body": "Lithology classification with development_well_05.las",
+      "status": "completed",
+      "llmResponse": {
+        "script": "lithology_classifier.py",
+        "lasFile": "development_well_05.las",
+        "tool": "lithology_classifier",
+        "confidence": 0.85,
+        "reasoning": "Request mentions lithology classification - using lithology classifier with development well data"
+      },
+      "mcpScript": "lithology_classifier.py",
+      "lasFile": "development_well_05.las",
+      "outputFile": "output/2025-09-09_04-37-16/development_well_05_lithology_classifier_output.png",
+      "errorMessage": null,
+      "processingTime": 1724,
+      "completedAt": "2025-09-09T04:37:18.558Z",
+      "id": "2caab3ba-6dd7-493d-97eb-3e81ceaff4fb",
+      "createdAt": "2025-09-09T04:37:16.830Z"
     }
   ],
   "systemStatuses": [
     {
       "id": "5df9bc63-f26a-4554-97ac-09c06af2a984",
       "component": "email_monitor",
-      "status": "online",
+      "status": "offline",
       "metadata": {
-        "lastCheck": "2025-09-09T04:36:31.310Z",
-        "emailsProcessed": 0
+        "lastTest": "2025-09-09T04:36:56.792Z"
       },
-      "lastCheck": "2025-09-09T04:36:31.310Z"
+      "lastCheck": "2025-09-09T04:36:56.792Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",
@@ -511,22 +552,22 @@
         "model": "llama3.2:1b",
         "endpoint": "https://cee75955aab6.ngrok-free.app",
         "hasApiKey": false,
-        "lastConfigUpdate": "2025-09-09T04:30:10.055Z",
+        "lastConfigUpdate": "2025-09-09T04:36:53.227Z",
         "configured": true,
         "storageLocation": "localStorage",
-        "lastTest": "2025-09-09T04:30:19.008Z",
-        "responseTime": 7.119
+        "lastTest": "2025-09-09T04:36:56.793Z",
+        "responseTime": 1.49
       },
-      "lastCheck": "2025-09-09T04:30:19.008Z"
+      "lastCheck": "2025-09-09T04:36:56.793Z"
     },
     {
       "id": "401ff8c4-e1a8-4f39-9e32-cd88c9ccb314",
       "component": "mcp_server",
       "status": "online",
       "metadata": {
-        "lastTest": "2025-09-09T04:30:19.009Z"
+        "lastTest": "2025-09-09T04:36:56.801Z"
       },
-      "lastCheck": "2025-09-09T04:30:19.009Z"
+      "lastCheck": "2025-09-09T04:36:56.801Z"
     }
   ]
 }
