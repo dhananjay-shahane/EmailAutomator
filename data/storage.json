@@ -599,16 +599,52 @@
       "sender": "direct-query@system.local",
       "subject": "Direct Query Processing",
       "body": "Depth visualization with sample_well_01.las",
-      "status": "processing",
+      "status": "completed",
+      "llmResponse": {
+        "script": "depth_visualization.py",
+        "lasFile": "sample_well_01.las",
+        "tool": "depth_plotter",
+        "confidence": 0.95,
+        "reasoning": "Request mentions sample well data, using development well logging suite"
+      },
+      "mcpScript": "depth_visualization.py",
+      "lasFile": "sample_well_01.las",
+      "outputFile": "output/2025-09-09_04-44-51/sample_well_01_depth_plotter_output.png",
+      "errorMessage": null,
+      "processingTime": 1140,
+      "completedAt": "2025-09-09T04:44:52.168Z",
+      "id": "72b1f0d3-6b6f-40fe-bf8c-2c7575ee3a48",
+      "createdAt": "2025-09-09T04:44:06.787Z"
+    },
+    {
+      "sender": "direct-query@system.local",
+      "subject": "Direct Query Processing",
+      "body": "Resistivity analysis with exploration_well_04.las",
+      "status": "error",
       "llmResponse": null,
       "mcpScript": null,
       "lasFile": null,
       "outputFile": null,
-      "errorMessage": null,
+      "errorMessage": "LLM service unavailable: timeout of 45000ms exceeded",
       "processingTime": null,
-      "completedAt": null,
-      "id": "72b1f0d3-6b6f-40fe-bf8c-2c7575ee3a48",
-      "createdAt": "2025-09-09T04:44:06.787Z"
+      "completedAt": "2025-09-09T04:46:22.639Z",
+      "id": "cc20bc2f-0641-4649-a093-9bf94d279977",
+      "createdAt": "2025-09-09T04:45:37.620Z"
+    },
+    {
+      "sender": "direct-query@system.local",
+      "subject": "Direct Query Processing",
+      "body": "Lithology classification",
+      "status": "error",
+      "llmResponse": null,
+      "mcpScript": null,
+      "lasFile": null,
+      "outputFile": null,
+      "errorMessage": "LLM service unavailable: timeout of 45000ms exceeded",
+      "processingTime": null,
+      "completedAt": "2025-09-09T04:48:28.693Z",
+      "id": "d420900f-45b2-434f-b93e-a096677f0894",
+      "createdAt": "2025-09-09T04:47:43.686Z"
     }
   ],
   "systemStatuses": [
@@ -617,10 +653,10 @@
       "component": "email_monitor",
       "status": "online",
       "metadata": {
-        "lastCheck": "2025-09-09T04:44:14.315Z",
+        "lastCheck": "2025-09-09T04:51:14.315Z",
         "emailsProcessed": 0
       },
-      "lastCheck": "2025-09-09T04:44:14.315Z"
+      "lastCheck": "2025-09-09T04:51:14.315Z"
     },
     {
       "id": "0dce1afc-2c5a-42a1-9b10-d4e852002d18",

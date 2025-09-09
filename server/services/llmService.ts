@@ -18,7 +18,7 @@ export class LLMService {
   constructor() {
     // Set default Ollama configuration from environment or fallback
     this.endpoint = (
-      process.env.OLLAMA_ENDPOINT || "https://88c46355da8c.ngrok-free.app"
+      process.env.OLLAMA_ENDPOINT || "http://localhost:11434"
     ).replace(/\/$/, "");
     this.model = "llama3.2:1b";
     this.provider = "ollama";
@@ -42,7 +42,7 @@ export class LLMService {
   private useDefaults() {
     if (!this.endpoint || !this.provider || !this.model) {
       this.endpoint = (
-        process.env.OLLAMA_ENDPOINT || "https://88c46355da8c.ngrok-free.app"
+        process.env.OLLAMA_ENDPOINT || "http://localhost:11434"
       ).replace(/\/$/, "");
       this.model = "llama3.2:1b";
       this.provider = "ollama";
@@ -185,7 +185,7 @@ Respond only with valid JSON:`;
           headers: {
             "Content-Type": "application/json",
           },
-          timeout: 45000,
+          timeout: 10000,
         },
       );
 
@@ -292,7 +292,7 @@ Respond only with valid JSON:`;
           headers: {
             "Content-Type": "application/json",
           },
-          timeout: 30000,
+          timeout: 10000,
         },
       );
 
